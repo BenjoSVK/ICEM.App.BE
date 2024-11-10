@@ -1,10 +1,12 @@
 import os
+import uuid
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from src.schemas.TaskResponses import AsyncTaskResponse
+from src.celery_tasks.process_folder import process_tiff_prediction
+from src.schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 
 router = APIRouter()
 
@@ -48,7 +50,7 @@ async def transfer_zip_data(zipFolder: UploadFile = File(...)) -> AsyncTaskRespo
                 f.write(contents)
 
         # Perform celery task
-        # TODO .....
+        task = process_tiff_prediction.delay({"zip": zipFolder.filename})
 
         return {'task_id': task.task_id, 'status': task.status}
 
@@ -59,10 +61,10 @@ async def transfer_zip_data(zipFolder: UploadFile = File(...)) -> AsyncTaskRespo
 
 @router.get(
     '/process_folder',
-    response_model=FMPredictResponse,
+    response_model=PredictStructureResponse,
     responses={
         202: {'model': AsyncTaskResponse}
     }
 )
-async def get_prediction_result(task_id: uuid.UUID) -> FMPredictResponse:
+async def get_prediction_result(task_id: uuid.UUID) -> PredictStructureResponse:
     pass

@@ -17,3 +17,7 @@ class AsyncTaskResponse(BaseModel):
     """Represents the response containing status of the background task."""
     task_id: uuid.UUID
     status: AsyncResultStatus
+
+
+class PredictStructureResponse(BaseModel):
+    s: str
