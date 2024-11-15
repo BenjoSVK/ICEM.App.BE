@@ -2,6 +2,7 @@ from multiprocessing.pool import AsyncResult
 import os
 import uuid
 import asyncio
+from glob import glob
 
 from fastapi import APIRouter, File, UploadFile
 from fastapi import APIRouter
@@ -13,6 +14,41 @@ from config import get_settings
 
 router = APIRouter()
 settings = get_settings()
+
+
+# this endpoint process list of tiff files with given ids, the ids are in requests as list
+@router.post(
+    "/predict_structure", response_model=PredictStructureResponse, status_code=200
+)
+async def predict_structure(tiff_ids: list[str]) -> PredictStructureResponse:
+    try:
+        tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
+
+        # these tiff files will be processed by celery task
+        tiff_files = []
+        for tiff_id in tiff_ids:
+            tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tiff"))
+
+        if tiff_files == []:
+            return JSONResponse(
+                content={"message": "No tiff files found"}, status_code=404
+            )
+
+        result = predict_structure.delay(tiff_ids)
+
+        return JSONResponse(
+            content={
+                "message": "Data transferred successfully",
+                "task_id": result.id,
+                "tiff_files": tiff_files,
+            },
+            status_code=200,
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            content={"message": f"Error processing file: {str(e)}"}, status_code=500
+        )
 
 
 @router.post("/upload_zip", response_model=AsyncTaskResponse, status_code=200)
