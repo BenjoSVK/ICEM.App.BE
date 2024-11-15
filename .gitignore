@@ -1,4 +1,6 @@
+venv
 .venv
 __pycache__
 .DS_Store
 src/transfered_data
+iedl_root_dir
