@@ -1,0 +1,5 @@
+[submodule "src/iedl_segmentation"]
+	path = src/iedl_segmentation
+	url = https://github.com/tanczost/IEDL-segmentation-of-heart-tissue.git
+[submodule "iedl_segmentation"]
+	branch = deployment

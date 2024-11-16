@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, UploadFile
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from celery_tasks.process_folder import unzip_file
+from celery_tasks.process_folder import unzip_file, process_tiff_files
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 from config import get_settings
 
@@ -27,18 +27,19 @@ async def predict_structure(tiff_ids: list[str]) -> PredictStructureResponse:
         # these tiff files will be processed by celery task
         tiff_files = []
         for tiff_id in tiff_ids:
-            tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tiff"))
+            tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tif*"))
 
         if tiff_files == []:
             return JSONResponse(
                 content={"message": "No tiff files found"}, status_code=404
             )
 
-        result = predict_structure.delay(tiff_ids)
+        details = {"tiff_files": tiff_files}
+        result = process_tiff_files.delay(details)
 
         return JSONResponse(
             content={
-                "message": "Data transferred successfully",
+                "message": "Processing tiff files started",
                 "task_id": result.id,
                 "tiff_files": tiff_files,
             },

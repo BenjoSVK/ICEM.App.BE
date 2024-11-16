@@ -9,6 +9,18 @@ celery_app = Celery(
 )
 
 
+@celery_app.task(name="celery_tasks.process_folder.predict_structure")
+def process_tiff_files(details):
+    tiff_files = details.get("tiff_files")
+
+    # check if every tiff file exists
+    for tiff_file in tiff_files:
+        if not os.path.exists(tiff_file):
+            return {"error": "tiff file does not exist", "tiff_file": tiff_file}
+
+    return {"result": "success"}
+
+
 @celery_app.task(name="celery_tasks.process_folder.unzip_file")
 def unzip_file(details):
     zip_path = details.get("zip_path")
