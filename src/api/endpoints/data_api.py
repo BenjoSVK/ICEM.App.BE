@@ -4,9 +4,9 @@ import uuid
 import asyncio
 from glob import glob
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from celery_tasks.process_folder import unzip_file, process_tiff_files
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
@@ -116,4 +116,20 @@ async def get_tiff_files():
     return JSONResponse(
         content={"tiff_files": tiff_files},
         status_code=200,
+    )
+
+
+@router.get("/download_geojson/{tiff_id}")
+async def download_file(tiff_id: str):  # Changed id to str
+    tiff_folder = f"{settings.iedl_root_dir}/result_folder"
+    file_paths = glob(f"{tiff_folder}/{tiff_id}*.geojson")
+
+    if not file_paths:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = file_paths[0]
+    return FileResponse(
+        file_path,
+        media_type="application/octet-stream",
+        filename=file_path.split("/")[-1],
     )
