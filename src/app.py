@@ -62,6 +62,12 @@ async def startup_event():
         os.makedirs(bg_mask_folder)
         print(f"Created {bg_mask_folder} directory")
 
+    # cell mask folder
+    cell_mask_folder = os.path.join(settings.iedl_root_dir, "cell_mask_folder")
+    if not os.path.exists(cell_mask_folder):
+        os.makedirs(cell_mask_folder)
+        print(f"Created {cell_mask_folder} directory")
+
 
 def main():
     """

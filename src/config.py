@@ -4,6 +4,7 @@ This module contains the Setting class with all app configurations.
 
 import os
 from functools import lru_cache
+import torch
 
 from dotenv import load_dotenv
 
@@ -34,6 +35,17 @@ class Settings:
     port = int(str(os.environ.get("uvicorn_port")))
     host = os.environ.get("uvicorn_host")
     workers = int(str(os.environ.get("uvicorn_workers")))
+
+    im_channels = 3
+    mask_channels = 4
+    down_channels = [64, 128, 256, 512, 1024]
+    mid_channels = [1024, 512]
+    down_sample = [True, True, True, True]
+    res_net_layers = 1
+    use_soft_attention = True
+
+    cell_model_path = "/iedl_root_dir/trained_models/unet_resnet_final_ikem_cell_seg"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # REDIS
     # redis_host = os.environ.get("redis_host")

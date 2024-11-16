@@ -20,7 +20,7 @@ settings = get_settings()
 @router.post(
     "/predict_structure", response_model=PredictStructureResponse, status_code=200
 )
-async def predict_structure(tiff_ids: list[str]) -> PredictStructureResponse:
+async def predict_structure(tiff_ids: list[int]) -> PredictStructureResponse:
     try:
         tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
 
@@ -36,7 +36,10 @@ async def predict_structure(tiff_ids: list[str]) -> PredictStructureResponse:
 
         details = {
             "tiff_files": tiff_files,
+            "tiff_folder": tiff_folder,
             "bg_mask_folder": f"{settings.iedl_root_dir}/bg_mask_folder",
+            "cell_mask_folder": f"{settings.iedl_root_dir}/cell_mask_folder",
+            "id_list": tiff_ids,
         }
         result = process_tiff_files.delay(details)
 
@@ -102,3 +105,15 @@ async def get_task_status(task_id: str):
             content={"status": "Failed", "task_id": task_id},
             status_code=200,
         )
+
+
+# get every tiff file in the tiff folder
+@router.get("/get-tiff-files")
+async def get_tiff_files():
+    tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
+    tiff_files = glob(f"{tiff_folder}/*.tif*")
+
+    return JSONResponse(
+        content={"tiff_files": tiff_files},
+        status_code=200,
+    )

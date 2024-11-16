@@ -4,14 +4,12 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-#
-
-# Install system dependencies
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
     libgl1-mesa-glx \
+    libglib2.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
