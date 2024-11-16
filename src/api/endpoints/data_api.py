@@ -34,7 +34,10 @@ async def predict_structure(tiff_ids: list[str]) -> PredictStructureResponse:
                 content={"message": "No tiff files found"}, status_code=404
             )
 
-        details = {"tiff_files": tiff_files}
+        details = {
+            "tiff_files": tiff_files,
+            "bg_mask_folder": f"{settings.iedl_root_dir}/bg_mask_folder",
+        }
         result = process_tiff_files.delay(details)
 
         return JSONResponse(
@@ -96,5 +99,6 @@ async def get_task_status(task_id: str):
         )
     else:
         return JSONResponse(
-            content={"status": "Failed", "task_id": task_id}, status_code=200
+            content={"status": "Failed", "task_id": task_id},
+            status_code=200,
         )
