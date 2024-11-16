@@ -1,4 +1,4 @@
-from multiprocessing.pool import AsyncResult
+from celery.result import AsyncResult
 import os
 import uuid
 import asyncio
@@ -86,8 +86,14 @@ async def transfer_zip_data(zipFolder: UploadFile = File(...)) -> AsyncTaskRespo
 async def get_task_status(task_id: str):
     task_result = AsyncResult(task_id)
     if task_result.state == "PENDING":
-        return {"status": "Pending"}
+        return JSONResponse(
+            content={"status": "Pending", "task_id": task_id}, status_code=200
+        )
     elif task_result.state == "SUCCESS":
-        return {"status": "Success", "result": task_result.result}
+        return JSONResponse(
+            content={"status": "Success", "task_id": task_id}, status_code=200
+        )
     else:
-        return {"status": task_result.state}
+        return JSONResponse(
+            content={"status": "Failed", "task_id": task_id}, status_code=200
+        )
