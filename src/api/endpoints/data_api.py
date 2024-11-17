@@ -1,3 +1,4 @@
+from datetime import datetime
 from celery.result import AsyncResult
 import os
 import uuid
@@ -112,9 +113,48 @@ async def get_task_status(task_id: str):
 async def get_tiff_files():
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     tiff_files = glob(f"{tiff_folder}/*.tif*")
+    
+    files_info = []
+    for file in tiff_files:
+        file_name = os.path.basename(file)
+        file_id = os.path.splitext(file_name)[0]
+        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%Y-%m-%d')
+        file_size = os.path.getsize(file) / (1024 * 1024) # Get file size in MB
+        
+        files_info.append({
+            "id": file_id,
+            "last_modified": mod_time,
+            "size_bytes": file_size
+        })
 
     return JSONResponse(
-        content={"tiff_files": tiff_files},
+        content={"tiff_files": files_info},
+        status_code=200,
+    )
+
+
+# get geojson files
+@router.get("/get-geojson-files")
+async def get_geojson_files():
+    geojson_folder = f"{settings.iedl_root_dir}/result_folder"
+    geojson_files = glob(f"{geojson_folder}/*.geojson")
+
+    files_info = []
+    for file in geojson_files:
+        file_name = os.path.basename(file)
+        file_id = os.path.splitext(file_name)[0]
+        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%Y-%m-%d')
+        file_size = os.path.getsize(file) / (1024 * 1024) # Get file size in MB
+        
+        
+        files_info.append({
+            "id": file_id,
+            "last_modified": mod_time,
+            "size_bytes": file_size
+        })
+
+    return JSONResponse(
+        content={"geojson_files": files_info},
         status_code=200,
     )
 

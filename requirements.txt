@@ -7,3 +7,6 @@ redis
 flower
 pydantic
 python-dotenv
+celery
+torch
+numpy
