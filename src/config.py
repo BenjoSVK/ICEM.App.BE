@@ -28,14 +28,15 @@ class Settings:
     iedl_root_dir = os.environ.get("IEDL_ROOT_DIR")
     reload = os.environ.get("RELOAD")
 
-    app_name = os.environ.get("app_name")
-    log_level = os.environ.get("log_level")
+    app_name = os.environ.get("APP_NAME")
+    log_level = os.environ.get("LOG_LEVEL")
 
     # uvicorn setup
-    port = int(str(os.environ.get("uvicorn_port")))
-    host = os.environ.get("uvicorn_host")
-    workers = int(str(os.environ.get("uvicorn_workers")))
+    port = int(str(os.environ.get("UVICORN_PORT")))
+    host = os.environ.get("UVICORN_HOST")
+    workers = int(str(os.environ.get("UVICORN_WORKERS")))
 
+    # setup for models
     im_channels = 3
     mask_channels = 4
     down_channels = [64, 128, 256, 512, 1024]
@@ -46,9 +47,3 @@ class Settings:
 
     cell_model_path = "/iedl_root_dir/trained_models/unet_resnet_final_ikem_cell_seg"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # REDIS
-    # redis_host = os.environ.get("redis_host")
-    # redis_port = os.environ.get("redis_port")
-
-    # redis_uri = f"redis://{redis_host}:{redis_port}"

@@ -79,6 +79,7 @@ def main():
         host=settings.host,
         port=settings.port,
         workers=settings.workers,
+        log_level=settings.log_level,
     )
 
 
