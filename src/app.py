@@ -1,6 +1,7 @@
 import os
 import uvicorn
 from fastapi import FastAPI
+import torch
 
 
 from starlette.middleware import Middleware
@@ -67,6 +68,15 @@ async def startup_event():
     if not os.path.exists(cell_mask_folder):
         os.makedirs(cell_mask_folder)
         print(f"Created {cell_mask_folder} directory")
+
+# app before startup
+@app.on_event("startup")
+def check_visible_gpu():
+    # print visible devices
+    print("Visible devices: ", torch.cuda.device_count())
+    print("Current device: ", torch.cuda.current_device())
+    print("Device name: ", torch.cuda.get_device_name(torch.cuda.current_device()))
+
 
 
 def main():

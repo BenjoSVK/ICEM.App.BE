@@ -87,6 +87,9 @@ def process_tiff_files(details):
         performFilters,
         id_list,
     )
+
+    print("==========Cell mask created==========")
+
     # ======== create cell mask =========
 
     # ========= create tissue mask =========
