@@ -1,3 +1,35 @@
+# fastapi
+# uvicorn[standard]
+# pydantic
+# python-multipart
+# celery
+# redis
+# flower
+# pydantic
+# python-dotenv
+# celery
+# torch
+# numpy
+
+torch
+torchvision
+numpy
+pandas
+geopandas
+scikit-learn
+colour-science
+shapely
+openslide-python
+opencv-python-headless
+opencv-contrib-python-headless
+Pillow
+matplotlib
+seaborn
+tifffile
+multiprocess
+patchify
+scikit-image
+wandb
 fastapi
 uvicorn[standard]
 pydantic
@@ -5,8 +37,5 @@ python-multipart
 celery
 redis
 flower
-pydantic
 python-dotenv
-celery
-torch
-numpy
+tqdm

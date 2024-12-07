@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM nvidia/cuda:11.2.0-runtime-ubuntu20.04
 
 ENV PYTHONUNBUFFERED 1
 
@@ -17,7 +17,6 @@ RUN mkdir -p /app/logs/
 
 COPY ./src .
 
-RUN pip install  -r requirements.txt
-RUN pip install  -r iedl_segmentation/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD python app.py

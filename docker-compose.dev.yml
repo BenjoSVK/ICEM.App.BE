@@ -17,6 +17,9 @@ services:
       - vgg_histo_redis
     env_file:
       - .env
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     networks:
       - vgg_histo_network
 
