@@ -69,14 +69,17 @@ async def startup_event():
         os.makedirs(cell_mask_folder)
         print(f"Created {cell_mask_folder} directory")
 
+
 # app before startup
 @app.on_event("startup")
 def check_visible_gpu():
     # print visible devices
-    print("Visible devices: ", torch.cuda.device_count())
-    print("Current device: ", torch.cuda.current_device())
-    print("Device name: ", torch.cuda.get_device_name(torch.cuda.current_device()))
-
+    if torch.cuda.is_available():
+        print("Visible devices: ", torch.cuda.device_count())
+        print("Current device: ", torch.cuda.current_device())
+        print("Device name: ", torch.cuda.get_device_name(torch.cuda.current_device()))
+    else:
+        print("No GPU available")
 
 
 def main():

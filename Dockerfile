@@ -15,13 +15,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN mkdir -p /app/logs/
 
-COPY . .
-
-
-# Initialize and update the submodule
-# RUN git submodule update --init --recursive
+COPY ./src .
 
 RUN pip install  -r requirements.txt
-RUN pip install  -r src/iedl_segmentation/requirements.txt
+RUN pip install  -r iedl_segmentation/requirements.txt
 
-CMD python src/app.py
+CMD python app.py

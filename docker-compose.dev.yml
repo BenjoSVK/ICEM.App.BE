@@ -1,29 +1,40 @@
 services:
-  redis:
-    container_name: redis
+  vgg_histo_redis:
+    container_name: vgg_histo_redis
     image: redis
-    ports:
-      - "6379:6379"
-  icem_backend:
-    container_name: icem_backend
+    networks:
+      - vgg_histo_network
+
+  vgg_histo_backend:
+    container_name: vgg_histo_backend
     build: .
     ports:
-      - 8000:8000
+      - 7030:8000
     volumes:
-      - .:/app
-      - /app/.venv
+      - ./src:/app
       - ./iedl_root_dir:/iedl_root_dir
     depends_on:
-      - redis
-    environment:
-      - RELOAD=true
-  celery_worker:
-    container_name: celery_worker
+      - vgg_histo_redis
+    env_file:
+      - .env
+    networks:
+      - vgg_histo_network
+
+  vgg_histo_celery_worker:
+    container_name: vgg_histo_celery_worker
     build: .
-    command: celery -A src.celery_tasks.process_folder worker --loglevel=info --concurrency=1
+    command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
+    env_file:
+      - .env
     volumes:
-      - .:/app
+      - ./src:/app
       - ./iedl_root_dir:/iedl_root_dir
     depends_on:
-      - redis
-      - icem_backend
+      - vgg_histo_redis
+      - vgg_histo_backend
+    networks:
+      - vgg_histo_network
+
+networks:
+  vgg_histo_network:
+    driver: bridge

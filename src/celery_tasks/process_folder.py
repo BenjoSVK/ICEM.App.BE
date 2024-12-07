@@ -4,36 +4,18 @@ import numpy as np
 import re
 import torch
 
-try:
-    from config import get_settings
-except Exception as e:
-    from src.config import get_settings
+from config import get_settings
 
-try:
-    from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
-except Exception as e:
-    from src.iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
-
-try:
-    from iedl_segmentation.cell_postprocessing import performFilters
-except Exception as e:
-    print("Error in import")
-    print(e)
-    from src.iedl_segmentation.cell_postprocessing import performFilters
-
-try:
-    from iedl_segmentation.utils.create_background_mask import create_bg_mask_otsu
-except Exception as e:
-    from src.iedl_segmentation.utils.create_background_mask import create_bg_mask_otsu
-
-try:
-    from iedl_segmentation.cell_segmentation_prediction import create_cell_mask
-except Exception as e:
-    from src.iedl_segmentation.cell_segmentation_prediction import create_cell_mask
+from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
+from iedl_segmentation.cell_postprocessing import performFilters
+from iedl_segmentation.utils.create_background_mask import create_bg_mask_otsu
+from iedl_segmentation.cell_segmentation_prediction import create_cell_mask
 
 
 celery_app = Celery(
-    "my_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0"
+    "my_app",
+    broker="redis://vgg_histo_redis:6379/0",
+    backend="redis://vgg_histo_redis:6379/0",
 )
 
 
