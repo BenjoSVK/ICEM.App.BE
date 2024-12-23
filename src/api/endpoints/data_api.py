@@ -168,3 +168,27 @@ async def download_file(tiff_id: str):  # Changed id to str
         media_type="application/octet-stream",
         filename=file_path.split("/")[-1],
     )
+
+
+@router.delete("/clear-tiff-data/{tiff_id}")
+async def clear_tiff_data(tiff_id: str):
+    tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
+    cell_mask_folder = f"{settings.iedl_root_dir}/cell_mask_folder"
+    result_folder = f"{settings.iedl_root_dir}/result_folder"
+    bg_mask_folder = f"{settings.iedl_root_dir}/bg_mask_folder"
+
+    tiff_files = glob(f"{tiff_folder}/{tiff_id}*.tif*")
+    cell_mask_files = glob(f"{cell_mask_folder}/*{tiff_id}*.npy")
+    result_files = glob(f"{result_folder}/*{tiff_id}*.geojson")
+    bg_mask_files = glob(f"{bg_mask_folder}/*{tiff_id}*.npy")
+
+    all_files = tiff_files + cell_mask_files + result_files + bg_mask_files
+
+    if all_files:
+        for file in all_files:
+            os.remove(file)
+
+    return JSONResponse(
+        content={"message": "Tiff data cleared successfully"},
+        status_code=200,
+    )
