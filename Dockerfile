@@ -1,17 +1,16 @@
-FROM nvidia/cuda:11.2.0-runtime-ubuntu20.04
+ARG PYTHON_VERSION=3.11.8
 
-ENV PYTHONUNBUFFERED 1
+FROM python:${PYTHON_VERSION}-slim-bookworm as base
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gdal-bin \
-    libgdal-dev \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/logs/
 

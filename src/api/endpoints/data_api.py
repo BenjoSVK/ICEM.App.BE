@@ -113,19 +113,17 @@ async def get_task_status(task_id: str):
 async def get_tiff_files():
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     tiff_files = glob(f"{tiff_folder}/*.tif*")
-    
+
     files_info = []
     for file in tiff_files:
         file_name = os.path.basename(file)
         file_id = os.path.splitext(file_name)[0]
-        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%Y-%m-%d')
-        file_size = os.path.getsize(file) / (1024 * 1024) # Get file size in MB
-        
-        files_info.append({
-            "id": file_id,
-            "last_modified": mod_time,
-            "size_bytes": file_size
-        })
+        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
+        file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
+
+        files_info.append(
+            {"id": file_id, "last_modified": mod_time, "size_bytes": file_size}
+        )
 
     return JSONResponse(
         content={"tiff_files": files_info},
@@ -143,15 +141,12 @@ async def get_geojson_files():
     for file in geojson_files:
         file_name = os.path.basename(file)
         file_id = os.path.splitext(file_name)[0]
-        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime('%Y-%m-%d')
-        file_size = os.path.getsize(file) / (1024 * 1024) # Get file size in MB
-        
-        
-        files_info.append({
-            "id": file_id,
-            "last_modified": mod_time,
-            "size_bytes": file_size
-        })
+        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
+        file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
+
+        files_info.append(
+            {"id": file_id, "last_modified": mod_time, "size_bytes": file_size}
+        )
 
     return JSONResponse(
         content={"geojson_files": files_info},
