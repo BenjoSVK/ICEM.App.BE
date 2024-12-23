@@ -36,6 +36,25 @@ class Settings:
     host = os.environ.get("UVICORN_HOST")
     workers = int(str(os.environ.get("UVICORN_WORKERS")))
 
+    pg_port = int(str(os.environ.get("PG_PORT")))
+    pg_user = os.environ.get("PG_USER")
+    pg_password = os.environ.get("PG_PASSWORD")
+    pg_host = os.environ.get("PG_HOST")
+    pg_database = os.environ.get("PG_DB")
+
+    db_uri = (
+        "postgresql://"
+        f"{pg_user}"
+        ":"
+        f"{pg_password}"
+        "@"
+        f"{pg_host}"
+        ":"
+        f"{pg_port}"
+        "/"
+        f"{pg_database}"
+    )
+
     # setup for models
     im_channels = 3
     mask_channels = 4

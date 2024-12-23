@@ -5,23 +5,51 @@ import uuid
 import asyncio
 from glob import glob
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, Depends, status
+from fastapi.responses import FileResponse, JSONResponse
+from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 from celery_tasks.process_folder import unzip_file, process_tiff_files
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 from config import get_settings
+from db_handler import get_db
+from api.endpoints.auth import (
+    User,
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+)
 
 router = APIRouter()
 settings = get_settings()
+
+
+@router.post("/token")
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # this endpoint process list of tiff files with given ids, the ids are in requests as list
 @router.post(
     "/predict_structure", response_model=PredictStructureResponse, status_code=200
 )
-async def predict_structure(tiff_ids: list[int]) -> PredictStructureResponse:
+async def predict_structure(
+    tiff_ids: list[int],
+    current_user: User = Depends(get_current_user),
+) -> PredictStructureResponse:
     try:
         tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
 
@@ -60,7 +88,10 @@ async def predict_structure(tiff_ids: list[int]) -> PredictStructureResponse:
 
 
 @router.post("/upload_zip", response_model=AsyncTaskResponse, status_code=200)
-async def transfer_zip_data(zipFolder: UploadFile = File(...)) -> AsyncTaskResponse:
+async def transfer_zip_data(
+    current_user: User = Depends(get_current_user),
+    zipFolder: UploadFile = File(...),
+) -> AsyncTaskResponse:
 
     print("uploading zip file")
     try:
@@ -91,7 +122,10 @@ async def transfer_zip_data(zipFolder: UploadFile = File(...)) -> AsyncTaskRespo
 
 
 @router.get("/task-status/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+):
     task_result = AsyncResult(task_id)
     if task_result.state == "PENDING":
         return JSONResponse(
@@ -110,7 +144,9 @@ async def get_task_status(task_id: str):
 
 # get every tiff file in the tiff folder
 @router.get("/get-tiff-files")
-async def get_tiff_files():
+async def get_tiff_files(
+    current_user: User = Depends(get_current_user),
+):
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     tiff_files = glob(f"{tiff_folder}/*.tif*")
 
@@ -133,7 +169,9 @@ async def get_tiff_files():
 
 # get geojson files
 @router.get("/get-geojson-files")
-async def get_geojson_files():
+async def get_geojson_files(
+    current_user: User = Depends(get_current_user),
+):
     geojson_folder = f"{settings.iedl_root_dir}/result_folder"
     geojson_files = glob(f"{geojson_folder}/*.geojson")
 
@@ -155,7 +193,10 @@ async def get_geojson_files():
 
 
 @router.get("/download_geojson/{tiff_id}")
-async def download_file(tiff_id: str):  # Changed id to str
+async def download_file(
+    tiff_id: str,
+    current_user: User = Depends(get_current_user),
+):  # Changed id to str
     tiff_folder = f"{settings.iedl_root_dir}/result_folder"
     file_paths = glob(f"{tiff_folder}/{tiff_id}*.geojson")
 
@@ -171,7 +212,10 @@ async def download_file(tiff_id: str):  # Changed id to str
 
 
 @router.delete("/clear-tiff-data/{tiff_id}")
-async def clear_tiff_data(tiff_id: str):
+async def clear_tiff_data(
+    tiff_id: str,
+    current_user: User = Depends(get_current_user),
+):
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     cell_mask_folder = f"{settings.iedl_root_dir}/cell_mask_folder"
     result_folder = f"{settings.iedl_root_dir}/result_folder"

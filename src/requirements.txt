@@ -28,6 +28,7 @@ seaborn
 tifffile
 multiprocess
 patchify
+pyjwt
 scikit-image
 wandb
 fastapi
@@ -39,3 +40,6 @@ redis
 flower
 python-dotenv
 tqdm
+sqlalchemy
+psycopg2-binary
+

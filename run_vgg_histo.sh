@@ -8,6 +8,7 @@ REDIS_CONTAINER="vgg_histo_redis"
 BACKEND_CONTAINER="vgg_histo_backend"
 WORKER_CONTAINER="vgg_histo_celery_worker"
 NETWORK_NAME="vgg_histo_network"
+DB_CONTAINER="vgg_histo_db"
 
 # Step 1: Build the images
 echo "Building Docker images..."
@@ -30,6 +31,7 @@ echo "Cleaning up existing containers..."
 docker rm -f "$REDIS_CONTAINER" 2>/dev/null || true
 docker rm -f "$BACKEND_CONTAINER" 2>/dev/null || true
 docker rm -f "$WORKER_CONTAINER" 2>/dev/null || true
+docker rm -f "$DB_CONTAINER" 2>/dev/null || true
 
 # Step 4: Run Redis container
 echo "Starting Redis container..."
@@ -37,6 +39,16 @@ docker run -d \
   --name "$REDIS_CONTAINER" \
   --network "$NETWORK_NAME" \
   redis
+
+echo "Starting Database container..."
+docker run -d \
+  --name "$DB_CONTAINER" \
+  --network "$NETWORK_NAME" \
+  -e POSTGRES_DB=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -v db_data:/var/lib/postgresql/data \
+  postgres:13
 
 # Step 5: Run Backend container
 echo "Starting Backend container..."
