@@ -60,9 +60,7 @@ def create_access_token(data: dict, expires_delta: datetime.timedelta = None):
 async def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ):
-    if settings.deploy == "dev":
-        print("DEV MODE")
-        return User(1, "test")
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

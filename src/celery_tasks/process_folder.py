@@ -13,6 +13,7 @@ from iedl_segmentation.cell_segmentation_prediction import create_cell_mask
 from iedl_segmentation.multilabel_prediction import create_tissue_mask
 from iedl_segmentation.utils.tissue_segmentation_export import (
     process_structures_predictions,
+    process_cell_mask_to_geojson,
 )
 
 celery_app = Celery(
@@ -108,6 +109,7 @@ def process_tiff_files(details):
     for tiff_file in tiff_files:
         tiff_id = re.findall(r"\d+", tiff_file)[0]
         pred_path = f"{result_folder}/tissue_mask_{tiff_id}.npy"
+        cell_mask_npy = f"{cell_mask_folder}/cell_mask_{tiff_id}.npy"
         bg_path = f"{bg_mask_folder}/bg_mask_{tiff_id}.npy"
         geoj_path_tissue = f"{annotations_folder}/tissue_mask_{tiff_id}.geojson"
         geoj_path_cell = f"{annotations_folder}/cell_mask_{tiff_id}.geojson"
@@ -119,6 +121,8 @@ def process_tiff_files(details):
             bg_path=bg_path,
             output_path=geoj_path_tissue,
         )
+
+        process_cell_mask_to_geojson(cell_mask_npy, geoj_path_cell)
 
     print("==========GeoJSON created==========")
 
