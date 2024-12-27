@@ -46,7 +46,7 @@ docker run -d \
   --network "$NETWORK_NAME" \
   -e POSTGRES_DB=iedl_db \
   -e POSTGRES_USER=iedl_user \
-  -e POSTGRES_PASSWORD=j02uM,9=a+2E \
+  -e POSTGRES_PASSWORD=iedl_password \
   -v db_data:/var/lib/postgresql/data \
   postgres:13
 

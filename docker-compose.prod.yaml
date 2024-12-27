@@ -1,10 +1,4 @@
 services:
-  vgg_histo_redis:
-    container_name: vgg_histo_redis
-    image: redis
-    networks:
-      - vgg_histo_network
-
   vgg_histo_backend:
     container_name: vgg_histo_backend
     build: .
@@ -13,8 +7,6 @@ services:
     volumes:
       - ./src:/app
       - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
-    depends_on:
-      - vgg_histo_redis
     env_file:
       - .env
     networks:
@@ -30,7 +22,6 @@ services:
       - ./src:/app
       - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
     depends_on:
-      - vgg_histo_redis
       - vgg_histo_backend
     networks:
       - vgg_histo_network
