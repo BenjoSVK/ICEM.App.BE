@@ -174,10 +174,17 @@ async def get_geojson_files(
 @router.get("/download_geojson/{tiff_id}")
 async def download_file(
     tiff_id: str,
+    type: str = None,
     current_user: User = Depends(get_current_user),
 ):  # Changed id to str
-    tiff_folder = f"{settings.iedl_root_dir}/result_folder"
-    file_paths = glob(f"{tiff_folder}/{tiff_id}*.geojson")
+
+    if type != "tissue" and type != "cell":
+        raise HTTPException(
+            status_code=400, detail="Invalid type, must be tissue or cell"
+        )
+
+    tiff_folder = f"{settings.iedl_root_dir}/annotation_folder"
+    file_paths = glob(f"{tiff_folder}/{type}_mask_{tiff_id}*.geojson")
 
     if not file_paths:
         raise HTTPException(status_code=404, detail="File not found")
@@ -199,11 +206,13 @@ async def clear_tiff_data(
     cell_mask_folder = f"{settings.iedl_root_dir}/cell_mask_folder"
     result_folder = f"{settings.iedl_root_dir}/result_folder"
     bg_mask_folder = f"{settings.iedl_root_dir}/bg_mask_folder"
+    annotation_folder = f"{settings.iedl_root_dir}/annotation_folder"
 
     tiff_files = glob(f"{tiff_folder}/{tiff_id}*.tif*")
     cell_mask_files = glob(f"{cell_mask_folder}/*{tiff_id}*.npy")
     result_files = glob(f"{result_folder}/*{tiff_id}*.geojson")
     bg_mask_files = glob(f"{bg_mask_folder}/*{tiff_id}*.npy")
+    annotation_folder = glob(f"{annotation_folder}/*{tiff_id}*")
 
     all_files = tiff_files + cell_mask_files + result_files + bg_mask_files
 
