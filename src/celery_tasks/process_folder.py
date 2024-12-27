@@ -10,7 +10,7 @@ from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
 from iedl_segmentation.cell_postprocessing import performFilters
 from iedl_segmentation.utils.create_background_mask import create_bg_mask_otsu
 from iedl_segmentation.cell_segmentation_prediction import create_cell_mask
-
+from iedl_segmentation.multilabel_prediction import create_tissue_mask
 
 celery_app = Celery(
     "my_app",
@@ -26,6 +26,7 @@ def process_tiff_files(details):
     id_list = details.get("id_list")
     tiff_folder = details.get("tiff_folder")
     cell_mask_folder = details.get("cell_mask_folder")
+    result_folder = details.get("result_folder")
 
     settings = get_settings()
 
@@ -76,7 +77,18 @@ def process_tiff_files(details):
 
     # ========= create tissue mask =========
 
-    # TODO: create tissue mask
+    print("==========Creating tissue mask==========")
+
+    tissue_config = settings.tissue_config
+    tissue_model_path = settings.tissue_model_path
+
+    create_tissue_mask(
+        config=tissue_config,
+        cell_masks_folder=cell_mask_folder,
+        final_folder=result_folder,
+        model_path=tissue_model_path,
+        id_list=id_list,
+    )
 
     # ========= create tissue mask =========
 

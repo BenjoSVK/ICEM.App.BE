@@ -69,4 +69,19 @@ class Settings:
     use_soft_attention = True
 
     cell_model_path = "/iedl_root_dir/trained_models/unet_resnet_final_ikem_cell_seg"
+    tissue_model_path = "/iedl_root_dir/trained_models/AdditionalData_PyramidAttentionUNet_multiclass_LAB_batchnorm_scaled_BCE+DC.pt"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    tissue_config = {
+        "log": False,
+        "lr": 5e-6,
+        "n_classes": 5,
+        "l2_lambda": 1e-6,
+        "batch_size": 16,
+        "epochs": 25,
+        "mode": "multiclass_pyramid",
+        "norm": "batch",
+        "nodst": False,
+        "colorspace": "lab",
+        "attention": True,
+    }

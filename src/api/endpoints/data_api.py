@@ -11,10 +11,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from celery_tasks.process_folder import unzip_file, process_tiff_files
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 from config import get_settings
-from api.endpoints.auth import (
-    User,
-    get_current_user,
-)
+from schemas.base import User
+
+from services.auth import get_current_user
 
 router = APIRouter()
 settings = get_settings()
@@ -46,6 +45,7 @@ async def predict_structure(
             "tiff_folder": tiff_folder,
             "bg_mask_folder": f"{settings.iedl_root_dir}/bg_mask_folder",
             "cell_mask_folder": f"{settings.iedl_root_dir}/cell_mask_folder",
+            "result_folder": f"{settings.iedl_root_dir}/result_folder",
             "id_list": tiff_ids,
         }
         result = process_tiff_files.delay(details)
