@@ -11,6 +11,9 @@ from iedl_segmentation.cell_postprocessing import performFilters
 from iedl_segmentation.utils.create_background_mask import create_bg_mask_otsu
 from iedl_segmentation.cell_segmentation_prediction import create_cell_mask
 from iedl_segmentation.multilabel_prediction import create_tissue_mask
+from iedl_segmentation.utils.tissue_segmentation_export import (
+    process_structures_predictions,
+)
 
 celery_app = Celery(
     "my_app",
@@ -27,6 +30,7 @@ def process_tiff_files(details):
     tiff_folder = details.get("tiff_folder")
     cell_mask_folder = details.get("cell_mask_folder")
     result_folder = details.get("result_folder")
+    annotations_folder = details.get("annotations_folder")
 
     settings = get_settings()
 
@@ -94,11 +98,29 @@ def process_tiff_files(details):
         scalers_path=scalers_path,
     )
 
+    print("==========Tissue mask created==========")
+
     # ========= create tissue mask =========
 
     # ========= create GeoJSON =========
+    print("==========Creating GeoJSON==========")
+    # loop for creating GeoJSON for every tiff file
+    for tiff_file in tiff_files:
+        tiff_id = re.findall(r"\d+", tiff_file)[0]
+        pred_path = f"{result_folder}/tissue_mask_{tiff_id}.npy"
+        bg_path = f"{bg_mask_folder}/bg_mask_{tiff_id}.npy"
+        geoj_path_tissue = f"{annotations_folder}/tissue_mask_{tiff_id}.geojson"
+        geoj_path_cell = f"{annotations_folder}/cell_mask_{tiff_id}.geojson"
 
-    # TODO: create GeoJSON
+        process_structures_predictions(
+            tiff_path=tiff_file,
+            vsi_id=tiff_id,
+            pred_path=pred_path,
+            bg_path=bg_path,
+            output_path=geoj_path_tissue,
+        )
+
+    print("==========GeoJSON created==========")
 
     # ========= create GeoJSON =========
 

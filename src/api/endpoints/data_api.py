@@ -46,6 +46,7 @@ async def predict_structure(
             "bg_mask_folder": f"{settings.iedl_root_dir}/bg_mask_folder",
             "cell_mask_folder": f"{settings.iedl_root_dir}/cell_mask_folder",
             "result_folder": f"{settings.iedl_root_dir}/result_folder",
+            "annotations_folder": f"{settings.iedl_root_dir}/annotation_folder",
             "id_list": tiff_ids,
         }
         result = process_tiff_files.delay(details)

@@ -69,6 +69,12 @@ async def startup_event():
         os.makedirs(cell_mask_folder)
         print(f"Created {cell_mask_folder} directory")
 
+    # annotation folder
+    annotation_folder = os.path.join(settings.iedl_root_dir, "annotation_folder")
+    if not os.path.exists(annotation_folder):
+        os.makedirs(annotation_folder)
+        print(f"Created {annotation_folder} directory")
+
 
 # app before startup
 @app.on_event("startup")
