@@ -44,9 +44,9 @@ echo "Starting Database container..."
 docker run -d \
   --name "$DB_CONTAINER" \
   --network "$NETWORK_NAME" \
-  -e POSTGRES_DB=postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=iedl_db \
+  -e POSTGRES_USER=iedl_user \
+  -e POSTGRES_PASSWORD=j02uM,9=a+2E \
   -v db_data:/var/lib/postgresql/data \
   postgres:13
 
@@ -59,7 +59,7 @@ docker run -d \
   --gpus all \
   -v $(pwd)/src:/app \
   -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
-  --env-file .env \
+  --env-file .env.prod \
   --network "$NETWORK_NAME" \
   icemappbe_vgg_histo_backend
 
@@ -71,7 +71,7 @@ docker run -d \
   --gpus all \
   -v $(pwd)/src:/app \
   -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
-  --env-file .env \
+  --env-file .env.prod \
   --network "$NETWORK_NAME" \
   icemappbe_vgg_histo_celery_worker \
   celery -A celery_tasks.process_folder worker --pool=solo --loglevel=info --concurrency=1
