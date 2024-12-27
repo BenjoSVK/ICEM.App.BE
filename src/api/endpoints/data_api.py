@@ -151,7 +151,7 @@ async def get_tiff_files(
 async def get_geojson_files(
     current_user: User = Depends(get_current_user),
 ):
-    geojson_folder = f"{settings.iedl_root_dir}/result_folder"
+    geojson_folder = f"{settings.iedl_root_dir}/annotation_folder"
     geojson_files = glob(f"{geojson_folder}/*.geojson")
 
     files_info = []
