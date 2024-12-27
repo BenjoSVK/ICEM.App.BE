@@ -55,6 +55,10 @@ class Settings:
         f"{pg_database}"
     )
 
+    secret_key = os.environ.get("SECRET_KEY")
+    algorithm = os.environ.get("ALGORITHM")
+    access_token_expire_minutes = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
     # setup for models
     im_channels = 3
     mask_channels = 4

@@ -1,45 +1,23 @@
 from datetime import datetime
 from celery.result import AsyncResult
 import os
-import uuid
-import asyncio
 from glob import glob
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, Depends, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
 from fastapi.responses import FileResponse, JSONResponse
-from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 from celery_tasks.process_folder import unzip_file, process_tiff_files
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 from config import get_settings
-from db_handler import get_db
 from api.endpoints.auth import (
     User,
-    authenticate_user,
-    create_access_token,
     get_current_user,
 )
 
 router = APIRouter()
 settings = get_settings()
-
-
-@router.post("/token")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # this endpoint process list of tiff files with given ids, the ids are in requests as list
