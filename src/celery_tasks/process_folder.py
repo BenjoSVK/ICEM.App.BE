@@ -80,7 +80,10 @@ def process_tiff_files(details):
     print("==========Creating tissue mask==========")
 
     tissue_config = settings.tissue_config
+
     tissue_model_path = settings.tissue_model_path
+
+    scalers_path = f"{settings.iedl_root_dir}/trained_models/scalers"
 
     create_tissue_mask(
         config=tissue_config,
@@ -88,6 +91,7 @@ def process_tiff_files(details):
         final_folder=result_folder,
         model_path=tissue_model_path,
         id_list=id_list,
+        scalers_path=scalers_path,
     )
 
     # ========= create tissue mask =========

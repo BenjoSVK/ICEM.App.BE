@@ -24,6 +24,8 @@ class Settings:
 
     load_dotenv(".env")
 
+    deploy = os.environ.get("DEPLOY")
+
     # FOLDERS
     iedl_root_dir = os.environ.get("IEDL_ROOT_DIR")
     reload = os.environ.get("RELOAD")
@@ -72,16 +74,19 @@ class Settings:
     tissue_model_path = "/iedl_root_dir/trained_models/AdditionalData_PyramidAttentionUNet_multiclass_LAB_batchnorm_scaled_BCE+DC.pt"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    tissue_config = {
-        "log": False,
-        "lr": 5e-6,
-        "n_classes": 5,
-        "l2_lambda": 1e-6,
-        "batch_size": 16,
-        "epochs": 25,
-        "mode": "multiclass_pyramid",
-        "norm": "batch",
-        "nodst": False,
-        "colorspace": "lab",
-        "attention": True,
-    }
+    class TissueConfig:
+        def __init__(self):
+            self.log = False
+            self.lr = 5e-6
+            self.n_classes = 5
+            self.l2_lambda = 1e-6
+            self.batch_size = 16
+            self.epochs = 25
+            self.mode = "multiclass_pyramid"
+            self.norm = "batch"
+            self.nodst = False
+            self.colorspace = "lab"
+            self.attention = True
+
+    # Replace the dictionary with an instance of the new class
+    tissue_config = TissueConfig()
