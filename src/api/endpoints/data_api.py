@@ -212,9 +212,11 @@ async def clear_tiff_data(
     cell_mask_files = glob(f"{cell_mask_folder}/*{tiff_id}*.npy")
     result_files = glob(f"{result_folder}/*{tiff_id}*.geojson")
     bg_mask_files = glob(f"{bg_mask_folder}/*{tiff_id}*.npy")
-    annotation_folder = glob(f"{annotation_folder}/*{tiff_id}*")
+    annotation_files = glob(f"{annotation_folder}/*{tiff_id}*.geojson")
 
-    all_files = tiff_files + cell_mask_files + result_files + bg_mask_files
+    all_files = (
+        tiff_files + cell_mask_files + result_files + bg_mask_files + annotation_files
+    )
 
     if all_files:
         for file in all_files:
