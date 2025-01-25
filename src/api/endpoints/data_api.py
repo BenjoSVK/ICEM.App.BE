@@ -2,6 +2,9 @@ from datetime import datetime
 from celery.result import AsyncResult
 import os
 from glob import glob
+import logging
+
+logger = logging.getLogger("uvicorn.access")
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
 from fastapi.responses import FileResponse, JSONResponse
@@ -27,6 +30,10 @@ async def predict_structure(
     tiff_ids: list[int],
     current_user: User = Depends(get_current_user),
 ) -> PredictStructureResponse:
+
+    logger.info(
+        f"Predicting structure for tiff ids: {tiff_ids}, from user: {current_user.username}"
+    )
     try:
         tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
 
@@ -49,7 +56,9 @@ async def predict_structure(
             "annotations_folder": f"{settings.iedl_root_dir}/annotation_folder",
             "id_list": tiff_ids,
         }
+        logger.info(f" Details: {details}")
         result = process_tiff_files.delay(details)
+        logger.info(f"Task id: {result.id}")
 
         return JSONResponse(
             content={
@@ -72,7 +81,9 @@ async def transfer_zip_data(
     zipFolder: UploadFile = File(...),
 ) -> AsyncTaskResponse:
 
-    print("uploading zip file")
+    logger.info(
+        f"Uploading zip file: {zipFolder.filename}, from user: {current_user.username}"
+    )
     try:
         zip_folder = f"{settings.iedl_root_dir}/zip_folder"
 
@@ -88,7 +99,11 @@ async def transfer_zip_data(
                 "tiff_folder": f"{settings.iedl_root_dir}/tiff_folder",
             }
         )
+        logger.info(f"Task id: {result.id}")
 
+        logger.info(
+            f"Zip file uploaded successfully: {zipFolder.filename}, from user: {current_user.username}"
+        )
         return JSONResponse(
             content={"message": "Data transferred successfully", "task_id": result.id},
             status_code=200,
@@ -105,6 +120,9 @@ async def get_task_status(
     task_id: str,
     current_user: User = Depends(get_current_user),
 ):
+    logger.info(
+        f"Getting task status for task id: {task_id}, from user: {current_user.username}"
+    )
     task_result = AsyncResult(task_id)
     if task_result.state == "PENDING":
         return JSONResponse(
@@ -126,6 +144,7 @@ async def get_task_status(
 async def get_tiff_files(
     current_user: User = Depends(get_current_user),
 ):
+    logger.info(f"Getting tiff files for user: {current_user.username}")
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     tiff_files = glob(f"{tiff_folder}/*.tif*")
 
@@ -140,6 +159,8 @@ async def get_tiff_files(
             {"id": file_id, "last_modified": mod_time, "size_bytes": file_size}
         )
 
+    logger.info(f"Found {len(files_info)} tiff files for user: {current_user.username}")
+
     return JSONResponse(
         content={"tiff_files": files_info},
         status_code=200,
@@ -151,8 +172,13 @@ async def get_tiff_files(
 async def get_geojson_files(
     current_user: User = Depends(get_current_user),
 ):
+    logger.info(f"Getting geojson files for user: {current_user.username}")
     geojson_folder = f"{settings.iedl_root_dir}/annotation_folder"
     geojson_files = glob(f"{geojson_folder}/*.geojson")
+
+    logger.info(
+        f"Found {len(geojson_files)} geojson files for user: {current_user.username}"
+    )
 
     files_info = []
     for file in geojson_files:
@@ -178,6 +204,9 @@ async def download_file(
     current_user: User = Depends(get_current_user),
 ):  # Changed id to str
 
+    logger.info(
+        f"Downloading geojson file for tiff id: {tiff_id} and type: {type}, from user: {current_user.username}"
+    )
     if type != "tissue" and type != "cell":
         raise HTTPException(
             status_code=400, detail="Invalid type, must be tissue or cell"
@@ -202,6 +231,9 @@ async def clear_tiff_data(
     tiff_id: str,
     current_user: User = Depends(get_current_user),
 ):
+    logger.info(
+        f"Clearing tiff data for tiff id: {tiff_id}, from user: {current_user.username}"
+    )
     tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
     cell_mask_folder = f"{settings.iedl_root_dir}/cell_mask_folder"
     result_folder = f"{settings.iedl_root_dir}/result_folder"
@@ -217,6 +249,11 @@ async def clear_tiff_data(
     all_files = (
         tiff_files + cell_mask_files + result_files + bg_mask_files + annotation_files
     )
+
+    logger.info(
+        f"Deleting {len(all_files)} files for tiff id: {tiff_id}, from user: {current_user.username}"
+    )
+    logger.info(f"Files: {all_files}")
 
     if all_files:
         for file in all_files:

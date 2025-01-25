@@ -2,6 +2,7 @@ import os
 import uvicorn
 from fastapi import FastAPI
 import torch
+import logging
 
 
 from starlette.middleware import Middleware
@@ -38,6 +39,25 @@ async def startup_event():
     if not os.path.exists(settings.iedl_root_dir):
         os.makedirs(settings.iedl_root_dir)
         print(f"Created {settings.iedl_root_dir} directory")
+
+        # create log file if not exist
+    log_file = os.path.join(settings.iedl_root_dir, "ikem.log")
+    if not os.path.exists(log_file):
+        with open(log_file, "w") as f:
+            f.write("Created log file")
+
+    logger = logging.getLogger("uvicorn.access")
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
+    # add logging into log file
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    # log level INFO
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
 
     # zip folder
     zip_folder = os.path.join(settings.iedl_root_dir, "zip_folder")
