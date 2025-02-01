@@ -3,6 +3,7 @@ from celery.result import AsyncResult
 import os
 from glob import glob
 import logging
+import re
 
 logger = logging.getLogger("uvicorn.access")
 
@@ -124,17 +125,21 @@ async def get_task_status(
         f"Getting task status for task id: {task_id}, from user: {current_user.username}"
     )
     task_result = AsyncResult(task_id)
+    result = task_result.get()
+
     if task_result.state == "PENDING":
         return JSONResponse(
-            content={"status": "Pending", "task_id": task_id}, status_code=200
+            content={"status": "Pending", "task_id": task_id, "result": result},
+            status_code=200,
         )
     elif task_result.state == "SUCCESS":
         return JSONResponse(
-            content={"status": "Success", "task_id": task_id}, status_code=200
+            content={"status": "Success", "task_id": task_id, "result": result},
+            status_code=200,
         )
     else:
         return JSONResponse(
-            content={"status": "Failed", "task_id": task_id},
+            content={"status": "Failed", "task_id": task_id, "result": result},
             status_code=200,
         )
 
@@ -204,6 +209,18 @@ async def download_file(
     current_user: User = Depends(get_current_user),
 ):  # Changed id to str
 
+    # check wtih regex if tiff id is in form <ID>_<ID2>
+    if not tiff_id:
+        raise HTTPException(status_code=400, detail="Invalid tiff id")
+
+    if not type:
+        raise HTTPException(status_code=400, detail="Invalid type")
+
+    if not re.match(r"\d+_\d+", tiff_id):
+        raise HTTPException(
+            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
+        )
+
     logger.info(
         f"Downloading geojson file for tiff id: {tiff_id} and type: {type}, from user: {current_user.username}"
     )
@@ -231,6 +248,11 @@ async def clear_tiff_data(
     tiff_id: str,
     current_user: User = Depends(get_current_user),
 ):
+    if not re.match(r"\d+_\d+", tiff_id):
+        raise HTTPException(
+            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
+        )
+
     logger.info(
         f"Clearing tiff data for tiff id: {tiff_id}, from user: {current_user.username}"
     )
