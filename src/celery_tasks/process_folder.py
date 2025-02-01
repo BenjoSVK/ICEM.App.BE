@@ -55,7 +55,7 @@ def process_tiff_files(details):
         bg_mask = create_bg_mask_otsu(tiff_file)
 
         # with regex, get the number from file, use regex to get the number from the file name
-        tiff_id = re.findall(r"\d+", tiff_file)[0]
+        tiff_id = re.findall(r"\d+_\d+", tiff_file)[0]
 
         with open(f"{bg_mask_folder}/bg_mask_{tiff_id}.npy", "wb") as f:
             np.save(f, bg_mask.astype(np.uint8))
@@ -107,10 +107,12 @@ def process_tiff_files(details):
     print("==========Creating GeoJSON==========")
     # loop for creating GeoJSON for every tiff file
     for tiff_file in tiff_files:
-        tiff_id = re.findall(r"\d+", tiff_file)[0]
+        tiff_id = re.findall(r"\d+_\d+", tiff_file)[0]
+
         pred_path = f"{result_folder}/tissue_mask_{tiff_id}.npy"
         cell_mask_npy = f"{cell_mask_folder}/cell_mask_{tiff_id}.npy"
         bg_path = f"{bg_mask_folder}/bg_mask_{tiff_id}.npy"
+
         geoj_path_tissue = f"{annotations_folder}/tissue_mask_{tiff_id}.geojson"
         geoj_path_cell = f"{annotations_folder}/cell_mask_{tiff_id}.geojson"
 
