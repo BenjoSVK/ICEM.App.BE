@@ -47,17 +47,26 @@ async def startup_event():
             f.write("Created log file")
 
     logger = logging.getLogger("uvicorn.access")
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    logger.addHandler(handler)
+    logger.handlers.clear()  # Clear existing handlers
 
-    # add logging into log file
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-    # log level INFO
-    handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
+    # Console logging
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(console_handler)
+
+    # File logging
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(file_handler)
+
+    # Ensure the logger uses only your handlers
+    logger.propagate = False
 
     # zip folder
     zip_folder = os.path.join(settings.iedl_root_dir, "zip_folder")
