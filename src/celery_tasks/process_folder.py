@@ -155,4 +155,18 @@ def unzip_file(details):
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(tiff_folder)
 
-    return {"result": "success"}
+    # check if every file has the following name convention <ID>_<ID2>.ome.tif
+    # if not, delete the file and return list of files deleted
+    files = os.listdir(tiff_folder)
+    deleted_files = []
+
+    for file in files:
+        if not re.match(r"\d+_\d+.ome.tif", file):
+            os.remove(f"{tiff_folder}/{file}")
+            deleted_files.append(file)
+
+    if deleted_files == []:
+        return {"result": "success"}
+
+    else:
+        return {"result": "success_with_deleted_files", "deleted_files": deleted_files}
