@@ -40,8 +40,12 @@ async def predict_structure(
 
         # these tiff files will be processed by celery task
         tiff_files = []
+        incorrect_tiff_ids = []
         for tiff_id in tiff_ids:
-            tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tif*"))
+            if not re.match(r"\d+_\d+", tiff_id):
+                incorrect_tiff_ids.append(tiff_id)
+            else:
+                tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tif*"))
 
         if tiff_files == []:
             return JSONResponse(
@@ -64,6 +68,7 @@ async def predict_structure(
         return JSONResponse(
             content={
                 "message": "Processing tiff files started",
+                "incorrect_tiff_ids": incorrect_tiff_ids,
                 "task_id": result.id,
                 "tiff_files": tiff_files,
             },
