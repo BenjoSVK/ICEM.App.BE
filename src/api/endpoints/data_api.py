@@ -28,7 +28,7 @@ settings = get_settings()
     "/predict_structure", response_model=PredictStructureResponse, status_code=200
 )
 async def predict_structure(
-    tiff_ids: list[int],
+    tiff_ids: list[str],
     current_user: User = Depends(get_current_user),
 ) -> PredictStructureResponse:
 
@@ -51,7 +51,7 @@ async def predict_structure(
             return JSONResponse(
                 content={"message": "No tiff files found"}, status_code=404
             )
-
+        
         details = {
             "tiff_files": tiff_files,
             "tiff_folder": tiff_folder,

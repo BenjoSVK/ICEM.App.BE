@@ -28,3 +28,16 @@ for rebuild
 `docker-compose -f docker/docker-compose.dev.yml up --build`
 
 ### Production
+
+# Init testing database
+psql -U postgres -d mydatabase
+
+CREATE TABLE IF NOT EXISTS "users" (
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+-- Insert a record
+INSERT INTO "users" (username, password) VALUES ('admin', 'admin');
+
+SELECT * FROM "users";
