@@ -3,6 +3,7 @@ from celery import Celery
 import numpy as np
 import re
 import torch
+from glob import glob
 
 from config import get_settings
 
@@ -159,12 +160,15 @@ def unzip_file(details):
 
     # check if every file has the following name convention <ID>_<ID2>.ome.tif
     # if not, delete the file and return list of files deleted
-    files = os.listdir(tiff_folder)
+    files = glob(f"{tiff_folder}/*.tif")
+
+    print(f"Files in tiff folder: {files}")
     deleted_files = []
 
     for file in files:
-        if not re.match(r"\d+_\d+.ome.tif", file):
-            os.remove(f"{tiff_folder}/{file}")
+        file_name = file.split("/")[-1]
+        if not re.match(r"\d+_\d+.ome.tif", file_name):
+            os.remove(f"{file}")
             deleted_files.append(file)
 
     if deleted_files == []:
