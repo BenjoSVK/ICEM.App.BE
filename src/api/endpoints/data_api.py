@@ -51,7 +51,7 @@ async def predict_structure(
             return JSONResponse(
                 content={"message": "No tiff files found"}, status_code=404
             )
-        
+
         details = {
             "tiff_files": tiff_files,
             "tiff_folder": tiff_folder,
@@ -130,19 +130,20 @@ async def get_task_status(
         f"Getting task status for task id: {task_id}, from user: {current_user.username}"
     )
     task_result = AsyncResult(task_id)
-    result = task_result.get()
 
     if task_result.state == "PENDING":
         return JSONResponse(
-            content={"status": "Pending", "task_id": task_id, "result": result},
+            content={"status": "Pending", "task_id": task_id, "result": None},
             status_code=200,
         )
     elif task_result.state == "SUCCESS":
+        result = task_result.get()
         return JSONResponse(
             content={"status": "Success", "task_id": task_id, "result": result},
             status_code=200,
         )
     else:
+        result = task_result.get()
         return JSONResponse(
             content={"status": "Failed", "task_id": task_id, "result": result},
             status_code=200,
@@ -161,7 +162,7 @@ async def get_tiff_files(
     files_info = []
     for file in tiff_files:
         file_name = os.path.basename(file)
-        file_id = os.path.splitext(file_name)[0]
+        file_id = file.split("/")[-1]
         mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
         file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
 
@@ -192,8 +193,7 @@ async def get_geojson_files(
 
     files_info = []
     for file in geojson_files:
-        file_name = os.path.basename(file)
-        file_id = os.path.splitext(file_name)[0]
+        file_id = file.split("/")[-1]
         mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
         file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
 
