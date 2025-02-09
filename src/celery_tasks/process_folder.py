@@ -117,15 +117,21 @@ def process_tiff_files(details):
         geoj_path_tissue = f"{annotations_folder}/tissue_mask_{tiff_id}.geojson"
         geoj_path_cell = f"{annotations_folder}/cell_mask_{tiff_id}.geojson"
 
-        process_structures_predictions(
-            tiff_path=tiff_file,
-            vsi_id=tiff_id,
-            pred_path=pred_path,
-            bg_path=bg_path,
-            output_path=geoj_path_tissue,
-        )
+        try:
+            process_structures_predictions(
+                tiff_path=tiff_file,
+                vsi_id=tiff_id,
+                pred_path=pred_path,
+                bg_path=bg_path,
+                output_path=geoj_path_tissue,
+            )
+        except Exception as e:
+            print(f"Error creating GeoJSON for tissue mask: {e}")
 
-        process_cell_mask_to_geojson(cell_mask_npy, geoj_path_cell)
+        try:
+            process_cell_mask_to_geojson(cell_mask_npy, geoj_path_cell)
+        except Exception as e:
+            print(f"Error creating GeoJSON for cell mask: {e}")
 
     print("==========GeoJSON created==========")
 

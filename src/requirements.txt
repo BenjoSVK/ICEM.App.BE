@@ -10,7 +10,7 @@
 # celery
 # torch
 # numpy
-
+imagecodecs
 torch
 torchvision
 numpy

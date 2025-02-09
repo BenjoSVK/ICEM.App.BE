@@ -143,9 +143,9 @@ async def get_task_status(
             status_code=200,
         )
     else:
-        result = task_result.get()
+
         return JSONResponse(
-            content={"status": "Failed", "task_id": task_id, "result": result},
+            content={"status": "Failed", "task_id": task_id, "result": None},
             status_code=200,
         )
 
