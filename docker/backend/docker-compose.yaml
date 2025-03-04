@@ -18,6 +18,8 @@ services:
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      REDIS_HOST: 10.0.50.30
+      REDIS_PORT: 6379
       UVICORN_PORT: 8000
       UVICORN_HOST: 0.0.0.0
       UVICORN_WORKERS: 1
