@@ -17,10 +17,15 @@ from iedl_segmentation.utils.tissue_segmentation_export import (
     process_cell_mask_to_geojson,
 )
 
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+IEDL_ROOT_DIR = os.environ.get("IEDL_ROOT_DIR")
+
+
 celery_app = Celery(
     "my_app",
-    broker="redis://vgg_histo_redis:6379/0",
-    backend="redis://vgg_histo_redis:6379/0",
+    broker=f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
+    backend=f"redis://{REDIS_HOST}:{REDIS_PORT}/0",
 )
 
 
