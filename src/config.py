@@ -33,6 +33,10 @@ class Settings:
     app_name = os.environ.get("APP_NAME")
     log_level = os.environ.get("LOG_LEVEL")
 
+    # Redis
+    redis_host = os.environ.get("REDIS_HOST")
+    redis_port = os.environ.get("REDIS_PORT")
+
     # uvicorn setup
     port = int(str(os.environ.get("UVICORN_PORT")))
     host = os.environ.get("UVICORN_HOST")
