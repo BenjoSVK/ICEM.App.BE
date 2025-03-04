@@ -18,4 +18,4 @@ COPY ./src .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD python app.py
+CMD celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
