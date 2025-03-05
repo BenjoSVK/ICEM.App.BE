@@ -4,6 +4,7 @@ import numpy as np
 import re
 import torch
 from glob import glob
+import zipfile
 
 from config import get_settings
 
@@ -164,14 +165,13 @@ def unzip_file(details):
         return {"error": "zip file is not a zip file"}
 
     #  unzip file into tiff_folder, unzip with python zipfile module
-    import zipfile
-
+    print(f"Extracting file {zip_path} to {tiff_folder}")
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(tiff_folder)
 
     # check if every file has the following name convention <ID>_<ID2>.ome.tif
     # if not, delete the file and return list of files deleted
-    files = glob(f"{tiff_folder}/*.tif")
+    files = glob(f"{tiff_folder}/*.tif*")
 
     print(f"Files in tiff folder: {files}")
     deleted_files = []
