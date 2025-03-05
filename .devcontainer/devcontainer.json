@@ -20,12 +20,35 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
+	"containerEnv": {
+		"REDIS_HOST": "10.0.50.30",
+		"REDIS_PORT": "6379",
+		"IEDL_ROOT_DIR": "/iedl_root_dir",
+  
+		// These are not relevant... grr
+		"UVICORN_PORT": "8000",
+		"UVICORN_HOST": "0.0.0.0",
+		"UVICORN_WORKERS": "1",
+		"PG_PORT": "5432",
+		"PG_HOST": "vgg_histo_db",
+		"PG_USER": "iedl_user",
+		"PG_PASSWORD": "iedl_password",
+		"PG_DB": "iedl_db",
+		"SECRET_KEY": "413134fac717ca3688",
+		"ALGORITHM": "HS256",
+		"ACCESS_TOKEN_EXPIRE_MINUTES": "30",
+		"RELOAD": "False",
+		"APP_NAME": "iedl-api",
+		"LOG_LEVEL": "debug",
+		"DEPLOY": "dev"
+	},
+
 	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
 	"runArgs": [ 
 		"--gpus", "all", "--privileged",
 		"--network=bridge",
 		"--shm-size", "8g",
-		"-e", "CUDA_VISIBLE_DEVICES=0",
+		"-e", "CUDA_VISIBLE_DEVICES=1",
 
 		// Volumes
 		"-v", "/mnt/iedl_root_dir:/iedl_root_dir",
