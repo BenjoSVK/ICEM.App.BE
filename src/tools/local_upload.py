@@ -5,13 +5,18 @@ import shutil
 
 from backend.storage import Storage
 from backend.inference_backend import InferenceBackend
-
-
+from backend.file_handlers import FileHandlers
+from backend.handlers.zip_handler import ZipArchiveHandler
+from backend.handlers.image_handler import ImageFileHandler
 
 def main(args):
 
 
     backend = InferenceBackend(
+        handlers=FileHandlers([
+            ZipArchiveHandler(),
+            ImageFileHandler()
+        ]),
         storage=Storage(basepath=Path(args.storage))
     )
 

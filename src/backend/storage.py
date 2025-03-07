@@ -1,5 +1,7 @@
 
 from pathlib import Path
+import shutil
+import tempfile
 
 
 class Storage:
@@ -53,3 +55,29 @@ class Storage:
     def rglob(self, folder, pattern):
         """Returns all files from the folder"""
         return sorted(list((self.basepath / folder).rglob(pattern)))
+    
+    def get_temp_folder(self):
+
+        temp = self.basepath / "temp"
+        temp.mkdir(parents=True, exist_ok=True)
+
+        # New temporary folder under basepath/temp
+        return TemporaryFolder(temp)
+
+
+
+
+class TemporaryFolder:
+    def __init__(self, base_path: Path):
+        self.base_path = base_path
+        self.temp_dir = None
+
+    def __enter__(self):
+        self.temp_dir = Path(tempfile.mkdtemp(dir=self.base_path))
+        return self.temp_dir
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.temp_dir and self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir.as_posix())
+
+
