@@ -18,6 +18,18 @@
             ]
         },
         {
+            "name": "Local Upload",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/tools/local_upload.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-i", "iedl_root_dir/temp/2724.zip",
+                "-s", "./iedl_root_dir"
+            ]
+        },
+        {
             "name": "Celery Worker",
             "type": "debugpy",
             "request": "launch",

@@ -6,7 +6,7 @@ from backend.storage import Storage
 from backend.inference_backend import InferenceBackend
 from inference.inference_engine import InferenceEngine
 from inference.image_loader import OpenCvImageLoader
-from inference.iedl.iedl_model import IedlModel
+from inference.iedl.model import IedlModel
 
 
 def main(args):
