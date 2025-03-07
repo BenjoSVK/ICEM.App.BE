@@ -257,11 +257,7 @@ async def clear_tiff_data(
     tiff_id: str,
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-):
-    if not re.match(r"\d+_\d+", tiff_id):
-        raise HTTPException(
-            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
-        )
+):    
 
     logger.info(
         f"Clearing tiff data for tiff id: {tiff_id}, from user: {current_user.username}"
