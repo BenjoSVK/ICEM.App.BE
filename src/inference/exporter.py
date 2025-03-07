@@ -56,7 +56,9 @@ def _convert_to_geojson(tissue_mask: np.ndarray, output_path: str, vsi_id: str):
     geojson_cells_classes = []
 
     for c_idx, thresh, color in zip(
-        [1, 2, 3], [0.15, 0.15, 0.5], [(0, 255, 0), (0, 0, 255), (255, 255, 0)]
+        [1, 2, 3], 
+        [0.15, 0.15, 0.5], 
+        [(0, 255, 0), (0, 0, 255), (255, 255, 0)]
     ):
 
         contours, _ = cv2.findContours(
