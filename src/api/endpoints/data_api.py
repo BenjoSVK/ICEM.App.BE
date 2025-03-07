@@ -35,12 +35,28 @@ settings = get_settings()
 async def predict_structure(
     tiff_ids: list[str],
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
 ) -> PredictStructureResponse:
 
     logger.info(
         f"Predicting structure for tiff ids: {tiff_ids}, from user: {current_user.username}"
     )
     try:
+
+        # OK - this is ugly!
+        base_path = backend.storage.get_folderpath(Storage.TIF_FOLDER)
+        available = backend.get_available_inference_files()
+
+        # IDs are file stems.
+        available_ids = [
+            (Path(fi.id).stem, base_path / fi.id)
+            for fi in available
+        ]
+
+        file_paths = []
+        for id, filepath in available_ids:
+            if id in tiff_ids:
+                file_paths.append(filepath)
 
         # The list to process
         file_paths = tiff_ids
