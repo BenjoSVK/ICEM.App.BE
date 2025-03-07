@@ -12,7 +12,7 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "-f", "iedl_root_dir/tiff_folder/2724_part_1.tif",
+                "-f", "iedl_root_dir/tiff_folder/2724_part_2.tif",
                 "-m", "iedl",
                 "-s", "./iedl_root_dir"
             ]

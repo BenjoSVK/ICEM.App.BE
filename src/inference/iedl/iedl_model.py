@@ -14,30 +14,19 @@ from pydantic import BaseModel
 
 from tqdm import tqdm
 import torch
-import geopandas as gpd
-import os
-from multiprocessing import Pool
-from datetime import datetime
 
-import joblib
+from inference.iedl.transforms import NumpyToTensor, DistanceTransform, MultiScale
+from inference.iedl.utils import performFilters
 
-SHAPE_THRESHOLD = -1
-AREA_THRESHOLD = 60
-COLOR_THRESHOLD = 11
-CIRCULARITY_THRESHOLD = 0.7
-MAX_WORKERS = os.cpu_count()
+
 
 from iedl_segmentation.utils.smooth_tiled_predictions import (
     predict_img_with_smooth_windowing
 )
-from iedl_segmentation.configuration import configuration
 
 from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
 from iedl_segmentation.models.structure_segmentation.unet_model import PyramidAttentionUNet
     
-from iedl_segmentation.cell_postprocessing import (
-    process_batch
-)
 
 
 class IedlModelConfiguration(BaseModel):
@@ -76,71 +65,6 @@ class IedlTissueConfig:
         self.attention = True
 
 
-
-class NumpyToTensor(Callable):
-    def __call__(self, x):
-        x = x.astype(np.uint8)
-        x = np.transpose(x, axes=(2, 0, 1))
-        x = np.expand_dims(x, 0)
-        x = torch.from_numpy(x)
-        x = (x / 255.0).float()
-        return x
-
-
-class DistanceTransform(Callable):
-    def __call__(self, x):
-        """Converts <4;H;W> where first 3 channels are RGB and last is cell mask
-        Normalized RGB <0;1> and 3 distance maps for each class
-        """
-        y = np.zeros((6, x.shape[1], x.shape[2]), dtype=np.float32)
-        # First 3 channels are RGB converted into LAB
-        y[:3] = x[:3].astype(np.float32) / 255.0
-        y[:3] = cv2.cvtColor(y[:3].transpose(1,2,0), cv2.COLOR_RGB2LAB).transpose(2,0,1)
-
-        # Next 3 channels are distance transforms for each class
-        d1 = ((x[3] == 1) * 1.0).astype(np.uint8)
-        d2 = ((x[3] == 2) * 1.0).astype(np.uint8)
-        d3 = ((x[3] == 3) * 1.0).astype(np.uint8)
-        y[3] = cv2.distanceTransform(d1, cv2.DIST_L2, 3).astype(np.float32)
-        y[4] = cv2.distanceTransform(d2, cv2.DIST_L2, 3).astype(np.float32)
-        y[5] = cv2.distanceTransform(d3, cv2.DIST_L2, 3).astype(np.float32)
-        return y
-
-        
-
-class MultiScale(Callable):
-    def __init__(
-        self, 
-        scalers_path: Path,
-        downscaled: bool=True
-    ):
-        self.downscaled = downscaled            
-        self.scalers = []
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/L_scaler.joblib"))
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/A_scaler.joblib"))
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/B_scaler.joblib"))
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/multiclass_dst1_scaler.joblib"))
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/multiclass_dst2_scaler.joblib"))
-        self.scalers.append(joblib.load(f"{scalers_path}/multilabel/multiclass_dst3_scaler.joblib"))
-
-
-    def __call__(self, x):
-        if self.downscaled:
-            x = x.transpose(1,2,0)
-            x = cv2.resize(x, (x.shape[1]//2, x.shape[0]//2))
-            x = x.transpose(2,0,1)
-
-        H,W = x.shape[1], x.shape[2]
-        x[0] = self.scalers[0].transform(x[0].reshape(-1,1)).reshape(H,W)
-        x[1] = self.scalers[1].transform(x[1].reshape(-1,1)).reshape(H,W)
-        x[2] = self.scalers[2].transform(x[2].reshape(-1,1)).reshape(H,W)
-        x[3] = self.scalers[3].transform(x[3].reshape(-1,1)).reshape(H,W)
-        x[4] = self.scalers[4].transform(x[4].reshape(-1,1)).reshape(H,W)
-        x[5] = self.scalers[5].transform(x[5].reshape(-1,1)).reshape(H,W)
-
-        # Add batch dimension
-        x = np.expand_dims(x, axis=0)
-        return x
 
 
 
@@ -228,8 +152,8 @@ class IedlModel(IInferenceModel):
                     - predict mask for each patch
                     - save mask as NPY
                     - Post-process the final output
-                    - Produce geoJSON annotation
             3. Create tissue mask
+            4. Produce GeoJSON annotations
         
         """
 
@@ -257,6 +181,10 @@ class IedlModel(IInferenceModel):
         # 3. Create tissue mask
         
         mask_tissue = self._create_tissue_mask(output_cells)
+
+        x = mask_tissue[1:4].transpose(1,2,0) * 255.0
+        x = np.clip(x,0,255).astype(np.uint8)
+        cv2.imwrite("iedl_root_dir/temp/mask_tissue.png", x)
 
 
 
@@ -403,85 +331,3 @@ class IedlModel(IInferenceModel):
         return pred_combined
 
 
-
-"""
-    Modified post-processing
-"""
-
-def performFilters(
-    data: np.array,
-    area_threshold: int = AREA_THRESHOLD,
-    shape_threshold: int = SHAPE_THRESHOLD,
-    circularity_threshold: int = CIRCULARITY_THRESHOLD,
-    color_threshold: int = COLOR_THRESHOLD,
-    output_path: str = None,
-    create_geojson: bool = False,
-    batch_size_set: int = 0,
-    tiff_id: str = None,
-) -> np.array:
-
-    start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\t --> START - perform cell filter: {tiff_id}, time: {start}")
-
-    geojson_cells_classes = []
-
-    # Prepare whole_image and filtered_masks
-    whole_image = data[:3, :, :].transpose(1, 2, 0)
-    filtered_masks = data[3, :, :].astype(np.uint8)
-
-    # Find contours
-    contours, _ = cv2.findContours(
-        filtered_masks, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-    )
-    new_mask = np.zeros_like(filtered_masks)
-
-    total_contours = len(contours)
-    batch_size = total_contours // MAX_WORKERS + (total_contours % MAX_WORKERS > 0)
-
-    if batch_size_set != 0:
-        batch_size = batch_size_set
-
-    # Prepare arguments for parallel processing
-    args_list = []
-    for i in range(0, total_contours, batch_size):
-        batch_contours = contours[i : min(i + batch_size, total_contours)]
-        args = (
-            whole_image,
-            filtered_masks,
-            batch_contours,
-            area_threshold,
-            shape_threshold,
-            circularity_threshold,
-            color_threshold,
-            create_geojson,
-        )
-        args_list.append(args)
-
-    # Use multiprocessing to parallelize batch processing
-    with Pool(processes=MAX_WORKERS) as pool:
-        results = pool.map(process_batch, args_list)
-
-    # Combine results
-    for result in results:
-        contour_mask = result["contour_mask"]
-        new_mask = cv2.bitwise_or(new_mask, contour_mask)
-
-        if create_geojson:
-            geojson_cells_classes.extend(result["geojson_cells"])
-
-    # Save mask and GeoJSON if required
-    if output_path:
-        with open(f"{output_path}/filtered_mask.npy", "wb") as f:
-            np.save(f, new_mask.astype(np.uint8))
-
-    if create_geojson:
-        gdf_classes = gpd.GeoDataFrame.from_features(geojson_cells_classes)
-        gdf_classes.to_file(f"{output_path}/filtered_mask.geojson", driver="GeoJSON")
-
-    # Update data with new mask
-    data[3, :, :] = new_mask
-
-    end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\t --> END - perform cell filter: {tiff_id}, time: {end}")
-
-    return data
