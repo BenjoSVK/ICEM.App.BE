@@ -1,9 +1,17 @@
 
+import numpy as np
 from pathlib import Path
 from abc import ABC, abstractmethod
 
 from backend.storage import Storage
 from typing import Dict
+
+
+
+class IImageLoader(ABC):
+    @abstractmethod
+    def imread(self, file_path: Path) -> np.ndarray:
+        pass
 
 
 class IInferenceModel(ABC):
@@ -12,7 +20,12 @@ class IInferenceModel(ABC):
         pass
 
     @abstractmethod
-    def process_file(self, image_file_path: Path, storage: Storage):
+    def process_file(
+        self, 
+        image: np.ndarray,
+        image_file_path: Path, 
+        storage: Storage
+    ):
         pass
 
 
@@ -21,8 +34,10 @@ class IInferenceModel(ABC):
 class InferenceEngine:
     def __init__(
         self, 
-        models: Dict[str, IInferenceModel]
+        image_loader: IImageLoader,
+        models: Dict[str, IInferenceModel],
     ):
+        self.image_loader = image_loader
         # Models we can use for inference
         self.models = models
 
@@ -50,5 +65,10 @@ class InferenceEngine:
         # Run inference with this model
         model = self.models[model_name]
         model.lazy_initialize()
-        model.process_file(image_file_path, storage)
+
+        # Load the file, and go !
+        image = self.image_loader.imread(image_file_path)
+
+        # Process with the model
+        model.process_file(image, image_file_path, storage)
 
