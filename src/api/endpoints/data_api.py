@@ -72,28 +72,25 @@ async def predict_structure(
 @router.post("/upload_zip", response_model=AsyncTaskResponse, status_code=200)
 async def transfer_zip_data(
     current_user: User = Depends(get_current_user),
-#    backend: InferenceBackend = Depends(get_backend),
-    upload_file: UploadFile = File(...),
+    backend: InferenceBackend = Depends(get_backend),
+    zipFolder: UploadFile = File(...),
 ) -> AsyncTaskResponse:
 
-    # Get our backend
-    backend: InferenceBackend = get_backend()
-
     logger.info(
-        f"Uploading file: {upload_file.filename}, from user: {current_user.username}"
+        f"Uploading file: {zipFolder.filename}, from user: {current_user.username}"
     )
     try:
 
         # Copy the given file to the ZIP folder    
         target_filename = backend.storage.get_filepath(
             Storage.ZIP_FOLDER, 
-            upload_file.filename,
+            zipFolder.filename,
             create_parents=True
         )
 
         # Save the uploaded file into the ZIP_FOLDER
         with open(f"{target_filename.as_posix()}", "wb") as f:
-            while contents := await upload_file.read(1024 * 1024):
+            while contents := await zipFolder.read(1024 * 1024):
                 f.write(contents)
 
         # Accept the file by the backend (via Celery)
@@ -102,7 +99,7 @@ async def transfer_zip_data(
         logger.info(f"Task id: {result.id}")
 
         logger.info(
-            f"File uploaded successfully: {upload_file.filename}, from user: {current_user.username}"
+            f"File uploaded successfully: {zipFolder.filename}, from user: {current_user.username}"
         )
         return JSONResponse(
             content={"message": "Data transferred successfully", "task_id": result.id},
