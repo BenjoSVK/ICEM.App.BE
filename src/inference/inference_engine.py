@@ -1,3 +1,4 @@
+import logging
 
 import numpy as np
 from pathlib import Path
@@ -6,6 +7,8 @@ from abc import ABC, abstractmethod
 from backend.storage import Storage
 from typing import Dict
 
+
+logger = logging.getLogger("uvicorn.access")
 
 
 class IImageLoader(ABC):
@@ -59,7 +62,10 @@ class InferenceEngine:
         Throws exception is something went wrong.
         """
 
+        logger.info(f"InferenceEngine.process - {image_file_path.as_posix()} (model: {model_name})")
+
         if not model_name in self.models:
+            logger.error(f"Invalid inference model specified: {model_name}")
             raise ValueError(f"Invalid inference model specified: {model_name}")
         
         # Run inference with this model
