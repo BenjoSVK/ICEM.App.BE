@@ -56,7 +56,7 @@ async def predict_structure(
         file_paths = []
         for id, filepath in available_ids:
             if id in tiff_ids:
-                file_paths.append(filepath)
+                file_paths.append(filepath.as_posix())
 
         # The list to process
         if len(file_paths) == 0:
