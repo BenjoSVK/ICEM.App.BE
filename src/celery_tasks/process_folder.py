@@ -27,7 +27,7 @@ celery_app = Celery(
 )
 
 
-@celery_app.task(name="celery_tasks.process_folder.predict_structure")
+@celery_app.task(name="celery_tasks.process_folder.predict_structure", acks_late=True)
 def process_tiff_files(details):
 
     # Get our backend
@@ -45,7 +45,7 @@ def process_tiff_files(details):
     return {"result": "success"}
 
 
-@celery_app.task(name="celery_tasks.process_folder.unzip_file")
+@celery_app.task(name="celery_tasks.process_folder.unzip_file", acks_late=True)
 def unzip_file(details):
 
     # Get our backend
