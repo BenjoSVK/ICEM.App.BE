@@ -59,7 +59,6 @@ async def predict_structure(
                 file_paths.append(filepath)
 
         # The list to process
-        file_paths = tiff_ids
         if len(file_paths) == 0:
             return JSONResponse(
                 content={"message": "No tiff files found"}, 
