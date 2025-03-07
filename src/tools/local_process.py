@@ -1,18 +1,40 @@
 import argparse
+import sys
 
 from pathlib import Path
 
 from backend.storage import Storage
 from backend.inference_backend import InferenceBackend
+from backend.file_handlers import FileHandlers
+from backend.handlers.zip_handler import ZipArchiveHandler
+from backend.handlers.image_handler import ImageFileHandler
+
 from inference.inference_engine import InferenceEngine
 from inference.image_loader import OpenCvImageLoader
 from inference.iedl.model import IedlModel
 
+import logging
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.DEBUG, 
+        format="%(asctime)s %(levelname)s: %(message)s", 
+        stream=sys.stdout
+    )
+    logging.info("Logging configured")
+
 
 def main(args):
 
+    setup_logging()
+
     # Build the backend
     backend = InferenceBackend(
+        handlers=FileHandlers([
+            ZipArchiveHandler(),
+            ImageFileHandler()
+        ]),
         storage=Storage(basepath=Path(args.storage)),
         engine=InferenceEngine(
             image_loader=OpenCvImageLoader(),
