@@ -34,7 +34,7 @@ def main(args):
             print(f"   {file_info}")
 
     #3 - List what we've got
-    files = backend.get_available_files()
+    files = backend.get_available_inference_files()
     print("")
     print(f"Available files: ")
     for file_info in files:

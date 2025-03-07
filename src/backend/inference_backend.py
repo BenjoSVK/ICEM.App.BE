@@ -1,17 +1,20 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import zipfile
 
 from backend.storage import Storage
+from inference.inference_engine import InferenceEngine
 from schemas.file_info import FileInfo
 
 class InferenceBackend:
     def __init__(
         self,
-        storage: Storage
+        storage: Storage,
+        engine: Optional[InferenceEngine] = None
         ):
         self.storage = storage
+        self.engine = engine
 
 
 
@@ -73,7 +76,7 @@ class InferenceBackend:
 
 
 
-    def get_available_files(self) -> List[FileInfo]:
+    def get_available_inference_files(self) -> List[FileInfo]:
         """Returns the list of files available for inference.
         
         Returns:
@@ -95,6 +98,35 @@ class InferenceBackend:
             )
 
         return result
+
+
+    def execute_inference(
+        self, 
+        image_file_path: Path,
+        model_name: str
+    ):
+        """Synchronously execute model inference on the given file."""
+        if self.engine is None:
+            raise RuntimeError("Inference backend does not have a valid inference engine.")
+        
+        # Delegate the call
+        self.engine.process(
+            image_file_path=image_file_path,
+            model_name=model_name,
+            storage=self.storage
+        )
+
+
+
+    def get_result_files(self) -> List[FileInfo]:
+        """Returns the list of inference results.
+        
+        Returns:
+            List[FileInfo] - files
+        """
+
+        result = []
+
 
 
     def _get_file_info(

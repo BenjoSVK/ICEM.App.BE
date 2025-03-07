@@ -1,9 +1,31 @@
 import argparse
 
+from pathlib import Path
+
+from backend.storage import Storage
+from backend.inference_backend import InferenceBackend
+from inference.inference_engine import InferenceEngine
+from inference.iedl.iedl_model import IedlModel
 
 
 def main(args):
-    pass
+
+    # Build the backend
+    backend = InferenceBackend(
+        storage=Storage(basepath=Path(args.storage)),
+        engine=InferenceEngine(
+            models={
+                "iedl": IedlModel()
+            }
+        )
+    )
+
+    # Run the inference
+    backend.execute_inference(
+        image_file_path=Path(args.filename),
+        model_name=args.model
+    )
+
 
 
 
@@ -19,6 +41,12 @@ if __name__ == "__main__":
         default="iedl", 
         type=str, help="Model to be used for processing. Default (iedl)"
         )
+    p.add_argument(
+        "--storage", "-s", 
+        default="./iedl_root_dir", 
+        help="Base folder for storing backend files"
+        )
+    
     
     main(p.parse_args())
 
