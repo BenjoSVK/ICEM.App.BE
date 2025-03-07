@@ -17,7 +17,7 @@ SHAPE_THRESHOLD = -1
 AREA_THRESHOLD = 60
 COLOR_THRESHOLD = 11
 CIRCULARITY_THRESHOLD = 0.7
-MAX_WORKERS = os.cpu_count()
+MAX_WORKERS = 1 #os.cpu_count()
 
 
 
@@ -76,8 +76,11 @@ def performFilters(
         args_list.append(args)
 
     # Use multiprocessing to parallelize batch processing
-    with Pool(processes=MAX_WORKERS) as pool:
-        results = pool.map(process_batch, args_list)
+    if MAX_WORKERS > 1:
+        with Pool(processes=MAX_WORKERS) as pool:
+            results = pool.map(process_batch, args_list)
+    else:
+        results = [ process_batch(x) for x in args_list ]
 
     # Combine results
     for result in results:
