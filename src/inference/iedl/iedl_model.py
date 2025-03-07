@@ -1,34 +1,104 @@
 
 import cv2
 import numpy as np
+from typing import List, Callable
 from pathlib import Path
 from skimage import measure
 from patchify import patchify
+import torchvision.transforms as transforms
 
 from backend.storage import Storage
-
 from inference.inference_engine import IInferenceModel
-
 from inference.exporter import GeoJsonExporter
+from pydantic import BaseModel
+
+from tqdm import tqdm
+import torch
+from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
+
+
+class IedlModelConfiguration(BaseModel):
+    im_channels: int
+    mask_channels: int
+    down_channels: List[int]
+    mid_channels: List[int]
+    down_sample: List[bool]
+    res_net_layers: int
+    use_soft_attention: bool
+
+
+DEFAULT_IEDL_MODEL_CONFIGURATION = IedlModelConfiguration(
+    im_channels=3,
+    mask_channels=4,
+    down_channels=[64, 128, 256, 512, 1024],
+    mid_channels=[1024, 512],
+    down_sample=[True, True, True, True],
+    res_net_layers=1,
+    use_soft_attention=True
+)
+
+
+class NumpyToTensor(Callable):
+    def __call__(self, x):
+        x = x.astype(np.uint8)
+        x = np.transpose(x, axes=(2, 0, 1))
+        x = np.expand_dims(x, 0)
+        x = torch.from_numpy(x)
+        x = (x / 255.0).float()
+        return x
+
+
+
 
 
 class IedlModel(IInferenceModel):
-    def __init__(self):
+    def __init__(
+        self,
+        models_path: Path,
+        model_configuration: IedlModelConfiguration = DEFAULT_IEDL_MODEL_CONFIGURATION
+    ):
         self.is_initialized = False
+        self.models_path = models_path
         self.exporter = GeoJsonExporter()
+        self.device = torch.device("cpu")
+
         # Our model works in 256x256
         self.patch_size = (256, 256)
+        self.model_configuration = model_configuration
+        self.model = None
+
+        # Paths to models
+        self.cell_model_path = models_path / "unet_resnet_final_ikem_cell_seg"
+        self.tissue_model_path = models_path / "AdditionalData_PyramidAttentionUNet_multiclass_LAB_batchnorm_scaled_BCE+DC.pt"
 
 
     def lazy_initialize(self):
         """Load pytorch models and stuff"""
         if not self.is_initialized:
-
             # Do just once!
-
             self.is_initialized = True
 
-        pass
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+            # Load the model
+            self.cell_model = ResNetUnet(
+                im_channels=self.model_configuration.im_channels,
+                mask_channels=self.model_configuration.mask_channels,
+                down_channels=self.model_configuration.down_channels,
+                mid_channels=self.model_configuration.mid_channels,
+                down_sample=self.model_configuration.down_sample,
+                res_net_layers=self.model_configuration.res_net_layers,
+                use_soft_attention=self.model_configuration.use_soft_attention,
+            )    
+            self.cell_model.load_state_dict(
+                torch.load(self.cell_model_path, map_location=torch.device("cpu"))
+            )
+            self.cell_model = self.cell_model.to(self.device)
+            self.cell_model.eval()
+
+            self.cell_transform = transforms.Compose([ NumpyToTensor() ])
+
+        # All is well                
 
 
     def process_file(
@@ -93,18 +163,20 @@ class IedlModel(IInferenceModel):
         mask_patches = patchify(mask, (PH, PW), step=PH)
 
         NUM_PATCHES_ROWS, NUM_PATCHES_COLS = image_patches.shape[:2]
-        for i in range(NUM_PATCHES_ROWS):
-            for j in range(NUM_PATCHES_COLS):
+        num_patches = NUM_PATCHES_COLS * NUM_PATCHES_ROWS
+        for k in tqdm(range(num_patches), desc="Cell masks", ncols=80):
+            i = k // NUM_PATCHES_COLS
+            j = k % NUM_PATCHES_COLS
 
-                # Select the patch
-                patch_mask = mask_patches[i,j,0]
-                patch_image = image_patches[i,j,0]
+            # Select the patch
+            patch_mask = mask_patches[i,j,0]
+            patch_image = image_patches[i,j,0]
 
-                # If there is no tissue, skip
-                if np.sum(patch_mask) > 0:
-                    # Compute prediction
-                    mask_hat = self._infer_single_patch(patch_image)
-                    result[i*PH:(i+1)*PH, j*PW:(j+1)*PW] = mask_hat
+            # If there is no tissue, skip
+            if np.sum(patch_mask) > 0:
+                # Compute prediction
+                mask_hat = self._infer_single_patch(patch_image)
+                result[i*PH:(i+1)*PH, j*PW:(j+1)*PW] = mask_hat
 
         # Apply background masking ...
         # TODO:
@@ -119,8 +191,18 @@ class IedlModel(IInferenceModel):
         image: np.ndarray
     ) -> np.ndarray:
         """Run inference on a single patch"""
-        result = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
-        return result
+
+        # Transform to tensor
+        x = self.cell_transform(image)      # <1;C;H;W> float <0;1>
+        x = x.to(self.device)
+
+        # Predict
+        with torch.no_grad():
+            pred = self.cell_model(x)
+            pred = pred[0]            
+            classes = torch.argmax(pred, dim=0).detach().cpu().numpy()
+
+        return classes
 
         
 

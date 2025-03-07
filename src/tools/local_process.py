@@ -17,7 +17,9 @@ def main(args):
         engine=InferenceEngine(
             image_loader=OpenCvImageLoader(),
             models={
-                "iedl": IedlModel()
+                "iedl": IedlModel(
+                    models_path=Path(args.storage) / "trained_models"
+                )
             }
         )
     )
