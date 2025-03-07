@@ -72,9 +72,12 @@ async def predict_structure(
 @router.post("/upload_zip", response_model=AsyncTaskResponse, status_code=200)
 async def transfer_zip_data(
     current_user: User = Depends(get_current_user),
-    backend: InferenceBackend = Depends(get_backend),
+#    backend: InferenceBackend = Depends(get_backend),
     upload_file: UploadFile = File(...),
 ) -> AsyncTaskResponse:
+
+    # Get our backend
+    backend: InferenceBackend = get_backend()
 
     logger.info(
         f"Uploading file: {upload_file.filename}, from user: {current_user.username}"
