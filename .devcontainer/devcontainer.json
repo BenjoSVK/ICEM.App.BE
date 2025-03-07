@@ -49,6 +49,7 @@
 		"--network=bridge",
 		"--shm-size", "8g",
 		"-e", "CUDA_VISIBLE_DEVICES=1",
+		"-e", "PYTHONPATH=/workspace/${localWorkspaceFolderBasename}/src",
 
 		// Volumes
 		"-v", "/mnt/iedl_root_dir:/iedl_root_dir",
