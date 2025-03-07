@@ -1,3 +1,5 @@
+import logging
+
 from pathlib import Path
 from typing import List, Optional
 
@@ -7,6 +9,9 @@ from schemas.file_info import FileInfo
 
 from backend.utils import get_file_info
 from backend.file_handlers import FileHandlers
+
+
+logger = logging.getLogger("uvicorn.access")
 
 
 
@@ -35,6 +40,8 @@ class InferenceBackend:
         Method throws exceptions on error.            
         """
         
+        logger.info(f"InferenceBackend.accept_file - {filepath.as_posix()}")
+
         return self.handlers.accept_file(filepath, self.storage)
 
 
@@ -45,6 +52,8 @@ class InferenceBackend:
         Returns:
             List[FileInfo] - 
         """
+
+        logger.info(f"InferenceBackend.get_available_inference_files")
 
         result = []
 
@@ -64,6 +73,9 @@ class InferenceBackend:
         image_file_path: Path,
         model_name: str
     ):
+        
+        logger.info(f"InferenceBackend.execute_inference - {image_file_path.as_posix()}")
+        
         """Synchronously execute model inference on the given file."""
         if self.engine is None:
             raise RuntimeError("Inference backend does not have a valid inference engine.")
@@ -83,6 +95,8 @@ class InferenceBackend:
         Returns:
             List[FileInfo] - files
         """
+        
+        logger.info(f"InferenceBackend.get_result_files")
 
         result = []
 

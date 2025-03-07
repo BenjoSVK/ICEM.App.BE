@@ -1,5 +1,5 @@
 import argparse
-
+import sys
 from pathlib import Path
 import shutil
 
@@ -9,8 +9,23 @@ from backend.file_handlers import FileHandlers
 from backend.handlers.zip_handler import ZipArchiveHandler
 from backend.handlers.image_handler import ImageFileHandler
 
+
+import logging
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.DEBUG, 
+        format="%(asctime)s %(levelname)s: %(message)s", 
+        stream=sys.stdout
+    )
+    logging.info("Logging configured")
+
+
+
 def main(args):
 
+    setup_logging()
 
     backend = InferenceBackend(
         handlers=FileHandlers([

@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import logging
 from typing import List
 from schemas.file_info import FileInfo
 from backend.utils import get_file_info
@@ -7,6 +8,8 @@ from backend.utils import get_file_info
 from backend.storage import Storage
 from backend.file_handlers import IFileHandler, IFileHandlers
 
+
+logger = logging.getLogger("uvicorn.access")
 
 
 class ImageFileHandler(IFileHandler):
@@ -29,8 +32,11 @@ class ImageFileHandler(IFileHandler):
 
         result = []
 
+        logger.info(f"ImageFileHandler.accept_file - {file_path.as_posix()}")
+
         if not file_path.exists():
-            raise FileNotFoundError(f"Input archive file '{file_path}' not found.")
+            logger.error(f"Input file '{file_path}' not found.")
+            return []
         
         # Target file path
         tif_folder = storage.get_folderpath(Storage.TIF_FOLDER)
@@ -40,6 +46,5 @@ class ImageFileHandler(IFileHandler):
         shutil.copyfile(src=file_path, dst=target)
 
         # Return the info
-        print(f"  - Accepted file: {target}")
         result.append(get_file_info(target, tif_folder))
         return result

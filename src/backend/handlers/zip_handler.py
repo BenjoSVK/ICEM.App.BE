@@ -1,10 +1,14 @@
 from pathlib import Path
 import zipfile
+import logging
 from typing import List
 from schemas.file_info import FileInfo
 
 from backend.storage import Storage
 from backend.file_handlers import IFileHandler, IFileHandlers
+
+
+logger = logging.getLogger("uvicorn.access")
 
 
 class ZipArchiveHandler(IFileHandler):
@@ -35,8 +39,11 @@ class ZipArchiveHandler(IFileHandler):
         """        
         result = []
 
+        logger.info(f"ZipArchiveHandler.accept_file - {file_path.as_posix()}")
+
         if not file_path.exists():
-            raise FileNotFoundError(f"Input archive file '{file_path}' not found.")
+            logger.error(f"Input archive file '{file_path}' not found.")
+            return []
 
         
         # Extract the files to a local temp folder
