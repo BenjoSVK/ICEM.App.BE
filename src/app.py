@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 import torch
@@ -11,6 +12,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from api.api import api_router
 from config import get_settings
+
+from backend.factory import create_inference_backend, BackendFactory
 
 settings = get_settings()
 
@@ -26,6 +29,14 @@ middleware = [
         allow_headers=["*"],
     )
 ]
+
+# Initialize backend
+BackendFactory().initialize(
+    create_inference_backend(
+        storage_path=Path(settings.iedl_root_dir),
+        enable_inference=False
+    )
+)
 
 app = FastAPI(middleware=middleware)
 

@@ -1,3 +1,4 @@
+import logging
 
 import cv2
 import numpy as np
@@ -27,6 +28,9 @@ from iedl_segmentation.utils.smooth_tiled_predictions import (
 from iedl_segmentation.models.cell_segmentation.resnet_unet import ResNetUnet
 from iedl_segmentation.models.structure_segmentation.unet_model import PyramidAttentionUNet
     
+
+logger = logging.getLogger("uvicorn.access")
+
 
 
 class IedlModelConfiguration(BaseModel):
@@ -91,9 +95,13 @@ class IedlModel(IInferenceModel):
         self.scalers_path = models_path / "scalers"
 
 
+
     def lazy_initialize(self):
         """Load pytorch models and stuff"""
         if not self.is_initialized:
+
+            logging.info(f"IedlModel.lazy_initialize - loading models from {self.models_path.as_posix()}")
+
             # Do just once!
             self.is_initialized = True
 
@@ -161,38 +169,33 @@ class IedlModel(IInferenceModel):
 
         #-----------------------------------------------
         # 1. Create background mask
+        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Creating background mask")
         mask_background = self._create_background_mask(image)
-
-        cv2.imwrite("iedl_root_dir/temp/image.png", image)
-        cv2.imwrite("iedl_root_dir/temp/mask.png", mask_background * 255)
 
         #-----------------------------------------------
         # 2. Create mask for all cells
+        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Creating cell mask")
         mask_cells = self._create_cell_mask(image, mask_background)
-        cv2.imwrite("iedl_root_dir/temp/mask_cells.png", mask_cells * 255)
 
         i = image.astype(np.uint8).transpose(2,0,1)
         output_cells = np.stack([ i[0], i[1], i[2], mask_cells])
         # Post processing
-        output_cells = performFilters(output_cells, tiff_id="")
 
+        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Filtering cell mask")
+        output_cells = performFilters(output_cells, tiff_id="")
 
         #-----------------------------------------------
         # 3. Create tissue mask
         
+        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Creating tissue mask")
         mask_tissue = self._create_tissue_mask(output_cells)
-
-        x = mask_tissue[1:4].transpose(1,2,0) * 255.0
-        x = np.clip(x,0,255).astype(np.uint8)
-        cv2.imwrite("iedl_root_dir/temp/mask_tissue.png", x)
-
-
 
         # Export
         exp_filepath = storage.get_filepath(Storage.ANNOTATION_FOLDER, f"{job_name}.geojson", True)
         self.exporter.write_to_file(mask_tissue, exp_filepath)
 
-        pass
+        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Done")
+
 
 
 
