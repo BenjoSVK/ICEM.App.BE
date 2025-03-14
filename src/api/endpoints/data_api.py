@@ -218,28 +218,12 @@ async def download_file(
     backend: InferenceBackend = Depends(get_backend),
 ):  # Changed id to str
 
-    # check wtih regex if tiff id is in form <ID>_<ID2>
-    if not tiff_id:
-        raise HTTPException(status_code=400, detail="Invalid tiff id")
-
-    if not type:
-        raise HTTPException(status_code=400, detail="Invalid type")
-
-    if not re.match(r"\d+_\d+", tiff_id):
-        raise HTTPException(
-            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
-        )
-
     logger.info(
         f"Downloading geojson file for tiff id: {tiff_id} and type: {type}, from user: {current_user.username}"
     )
-    if type != "tissue" and type != "cell":
-        raise HTTPException(
-            status_code=400, detail="Invalid type, must be tissue or cell"
-        )
 
     tiff_folder = f"{settings.iedl_root_dir}/annotation_folder"
-    file_paths = glob(f"{tiff_folder}/{type}_mask_{tiff_id}*.geojson")
+    file_paths = glob(f"{tiff_folder}/{tiff_id}")
 
     if not file_paths:
         raise HTTPException(status_code=404, detail="File not found")
