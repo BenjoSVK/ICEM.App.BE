@@ -45,7 +45,9 @@ async def predict_structure(
 
         # OK - this is ugly!
         base_path = backend.storage.get_folderpath(Storage.TIF_FOLDER)
+        logger.info(f"Step1")
         available = backend.get_available_inference_files()
+        logger.info(f"Step2")
 
         # IDs are file stems.
         available_ids = [
@@ -65,7 +67,9 @@ async def predict_structure(
                 status_code=404
             )
 
+        logger.info(f"Step3")
         result = process_tiff_files.delay({ "file_paths": file_paths })
+        logger.info(f"Step4")
         logger.info(f"Task id: {result.id}")
 
         return JSONResponse(
