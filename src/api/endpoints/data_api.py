@@ -51,7 +51,7 @@ async def predict_structure(
 
         # IDs are file stems.
         available_ids = [
-            (Path(fi.id).stem, base_path / fi.id)
+            (Path(fi.id).stem.split('.')[0], base_path / fi.id)
             for fi in available
         ]
 
