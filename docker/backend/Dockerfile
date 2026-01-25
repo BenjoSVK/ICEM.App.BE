@@ -12,7 +12,8 @@ RUN apt-get update \
 
 WORKDIR /temp
 COPY ./src/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+RUN pip install --no-cache-dir -r requirements.txt 
 
 WORKDIR /app
 

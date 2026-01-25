@@ -7,7 +7,10 @@ services:
 
   vgg_histo_backend:
     container_name: vgg_histo_backend
-    build: .
+    image: icemappbe-vgg_histo_backend
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
     ports:
       - 7030:8000
     volumes:
@@ -25,7 +28,10 @@ services:
 
   vgg_histo_celery_worker:
     container_name: vgg_histo_celery_worker
-    build: .
+    image: icemappbe-vgg_histo_celery_worker
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
     command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
     env_file:
       - .env
@@ -40,7 +46,7 @@ services:
 
   vgg_histo_db:
     container_name: vgg_histo_db
-    image: postgres:latest
+    image: postgres:17
     ports:
       - 5432:5432
     environment:
@@ -54,7 +60,7 @@ services:
 
 networks:
   vgg_histo_network:
-    driver: bridge
+    external: true
 
 volumes:
   db_data:

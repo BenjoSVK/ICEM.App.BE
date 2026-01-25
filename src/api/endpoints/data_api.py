@@ -1,19 +1,9 @@
-from datetime import datetime
-from celery.result import AsyncResult
-import os
-from glob import glob
-import logging
-import re
-from pathlib import Path
-
-logger = logging.getLogger("uvicorn.access")
-
 from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 from celery_tasks.process_folder import unzip_file, process_tiff_files
+from celery.result import AsyncResult
+
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
 from config import get_settings
 from schemas.base import User
@@ -23,6 +13,15 @@ from services.auth import get_current_user
 from backend.inference_backend import InferenceBackend
 from backend.factory import get_backend
 from backend.storage import Storage
+
+from datetime import datetime
+from pathlib import Path
+from glob import glob
+import logging
+import os
+import re
+
+logger = logging.getLogger("uvicorn.access")
 
 router = APIRouter()
 settings = get_settings()

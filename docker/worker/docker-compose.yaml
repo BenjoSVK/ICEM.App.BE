@@ -35,7 +35,7 @@ services:
 
 networks:
   vgg_histo_network:
-    driver: bridge
+    external: true
 
 volumes:
   db_data:
