@@ -13,7 +13,7 @@ from schemas.base import User, TokenData
 from config import get_settings
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/ikem_api/token")
 settings = get_settings()
 
 

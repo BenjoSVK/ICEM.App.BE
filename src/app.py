@@ -1,9 +1,13 @@
+"""
+This module contains the FastAPI application for the backend service.
+"""
 import os
-from pathlib import Path
-import uvicorn
-from fastapi import FastAPI
 import torch
+import uvicorn
 import logging
+
+from pathlib import Path
+from fastapi import FastAPI
 
 
 from starlette.middleware import Middleware
@@ -17,13 +21,10 @@ from backend.factory import create_inference_backend, BackendFactory
 
 settings = get_settings()
 
-# on startup check if iedl_root_dir exist
-
-
 middleware = [
     Middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["*"], # Change this to the specific origins in production
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -46,6 +47,11 @@ app.include_router(api_router, prefix="/ikem_api")
 # app before startup
 @app.on_event("startup")
 async def startup_event():
+    """
+    Check if they exist and if not
+    create necessary folders and setup logging.
+    """
+        # Create iedl_root_dir if not exist
     print("Checking if iedl_root_dir exist")
     if not os.path.exists(settings.iedl_root_dir):
         os.makedirs(settings.iedl_root_dir)
@@ -119,6 +125,9 @@ async def startup_event():
 # app before startup
 @app.on_event("startup")
 def check_visible_gpu():
+    """
+    Check if GPU is available and print device info.
+    """
     # print visible devices
     if torch.cuda.is_available():
         print("Visible devices: ", torch.cuda.device_count())

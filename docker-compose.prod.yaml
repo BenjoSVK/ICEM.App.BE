@@ -1,12 +1,13 @@
 services:
   vgg_histo_backend:
     container_name: vgg_histo_backend
+    image: vgg_histo_backend:latest
     build: .
     ports:
       - 7030:8000
     volumes:
       - ./src:/app
-      - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
+      - /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir
     env_file:
       - .env
     networks:
@@ -14,13 +15,14 @@ services:
 
   vgg_histo_celery_worker:
     container_name: vgg_histo_celery_worker
+    image: vgg_histo_celery_worker:latest
     build: .
     command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
     env_file:
       - .env
     volumes:
       - ./src:/app
-      - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
+      - /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir
     depends_on:
       - vgg_histo_backend
     networks:
@@ -28,4 +30,4 @@ services:
 
 networks:
   vgg_histo_network:
-    driver: bridge
+    external: true

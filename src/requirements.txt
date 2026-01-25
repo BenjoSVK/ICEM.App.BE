@@ -10,13 +10,14 @@
 # celery
 # torch
 # numpy
-imagecodecs
+numpy>=1.21.1,<1.25
+pandas
+scikit-learn
+scikit-image==0.21.0
 torch
 torchvision
-numpy
-pandas
+imagecodecs
 geopandas
-scikit-learn
 colour-science
 shapely
 openslide-python
@@ -29,7 +30,6 @@ tifffile
 multiprocess
 patchify
 pyjwt
-scikit-image
 wandb
 fastapi
 uvicorn[standard]

@@ -1,0 +1,347 @@
+diff --git a/.env b/.env
+index 4676638..bf08bd6 100644
+--- a/.env
++++ b/.env
+@@ -8,6 +8,9 @@ UVICORN_PORT=8000
+ UVICORN_HOST=0.0.0.0
+ UVICORN_WORKERS=1
+ 
++REDIS_HOST=vgg_histo_redis
++REDIS_PORT=6379
++
+ PG_PORT=5432
+ PG_HOST=vgg_histo_db
+ PG_USER=postgres
+@@ -18,6 +21,4 @@ SECRET_KEY=your_secret_key
+ ALGORITHM=HS256
+ ACCESS_TOKEN_EXPIRE_MINUTES=30
+ 
+-DEPLOY=dev
+-
+-
++DEPLOY=dev
+\ No newline at end of file
+diff --git a/docker-compose.dev.yml b/docker-compose.dev.yml
+index da87472..019be2b 100644
+--- a/docker-compose.dev.yml
++++ b/docker-compose.dev.yml
+@@ -7,7 +7,10 @@ services:
+ 
+   vgg_histo_backend:
+     container_name: vgg_histo_backend
+-    build: .
++    image: icemappbe-vgg_histo_backend
++    build:
++      context: .
++      dockerfile: docker/backend/Dockerfile
+     ports:
+       - 7030:8000
+     volumes:
+@@ -25,7 +28,10 @@ services:
+ 
+   vgg_histo_celery_worker:
+     container_name: vgg_histo_celery_worker
+-    build: .
++    image: icemappbe-vgg_histo_celery_worker
++    build:
++      context: .
++      dockerfile: docker/worker/Dockerfile
+     command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
+     env_file:
+       - .env
+@@ -40,7 +46,7 @@ services:
+ 
+   vgg_histo_db:
+     container_name: vgg_histo_db
+-    image: postgres:latest
++    image: postgres:17
+     ports:
+       - 5432:5432
+     environment:
+@@ -54,7 +60,7 @@ services:
+ 
+ networks:
+   vgg_histo_network:
+-    driver: bridge
++    external: true
+ 
+ volumes:
+   db_data:
+diff --git a/docker-compose.prod.yaml b/docker-compose.prod.yaml
+index ef4e774..3cf0978 100644
+--- a/docker-compose.prod.yaml
++++ b/docker-compose.prod.yaml
+@@ -1,12 +1,13 @@
+ services:
+   vgg_histo_backend:
+     container_name: vgg_histo_backend
++    image: vgg_histo_backend:latest
+     build: .
+     ports:
+       - 7030:8000
+     volumes:
+       - ./src:/app
+-      - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
++      - /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir
+     env_file:
+       - .env
+     networks:
+@@ -14,13 +15,14 @@ services:
+ 
+   vgg_histo_celery_worker:
+     container_name: vgg_histo_celery_worker
++    image: vgg_histo_celery_worker:latest
+     build: .
+     command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
+     env_file:
+       - .env
+     volumes:
+       - ./src:/app
+-      - /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir
++      - /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir
+     depends_on:
+       - vgg_histo_backend
+     networks:
+@@ -28,4 +30,4 @@ services:
+ 
+ networks:
+   vgg_histo_network:
+-    driver: bridge
++    external: true
+diff --git a/docker/backend/Dockerfile b/docker/backend/Dockerfile
+index 336f8da..83b0738 100644
+--- a/docker/backend/Dockerfile
++++ b/docker/backend/Dockerfile
+@@ -12,7 +12,8 @@ RUN apt-get update \
+ 
+ WORKDIR /temp
+ COPY ./src/requirements.txt .
+-RUN pip install --no-cache-dir -r requirements.txt
++
++RUN pip install --no-cache-dir -r requirements.txt 
+ 
+ WORKDIR /app
+ 
+diff --git a/docker/backend/docker-compose.yaml b/docker/backend/docker-compose.yaml
+index 800f84b..49816c3 100644
+--- a/docker/backend/docker-compose.yaml
++++ b/docker/backend/docker-compose.yaml
+@@ -5,12 +5,14 @@ services:
+     image: redis
+     ports:
+       - 6379:6379
++    networks:
++      - vgg_histo_network
+ 
+   vgg_histo_backend:
+     container_name: vgg_histo_backend
+     image: ikem-backend
+     ports:
+-      - 7030:8000
++      - 8000:8000
+     volumes:
+       - /opt/histo-backend/iedl_root_dir:/iedl_root_dir
+     depends_on:
+@@ -42,7 +44,7 @@ services:
+ 
+   vgg_histo_db:
+     container_name: vgg_histo_db
+-    image: postgres:13
++    image: postgres:17
+     #ports:
+     #  - 5432:5432
+     environment:
+@@ -56,7 +58,7 @@ services:
+ 
+ networks:
+   vgg_histo_network:
+-    driver: bridge
++    external: true
+ 
+ volumes:
+   db_data:
+diff --git a/docker/worker/docker-compose.yaml b/docker/worker/docker-compose.yaml
+index 494db8b..827ecb5 100644
+--- a/docker/worker/docker-compose.yaml
++++ b/docker/worker/docker-compose.yaml
+@@ -35,7 +35,7 @@ services:
+ 
+ networks:
+   vgg_histo_network:
+-    driver: bridge
++    external: true
+ 
+ volumes:
+   db_data:
+diff --git a/run_vgg_histo.sh b/run_vgg_histo.sh
+index 383210a..2fb47b5 100755
+--- a/run_vgg_histo.sh
++++ b/run_vgg_histo.sh
+@@ -58,7 +58,7 @@ docker run -d \
+   --privileged \
+   --gpus all \
+   -v $(pwd)/src:/app \
+-  -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
++  -v /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir \
+   --env-file .env.prod \
+   --network "$NETWORK_NAME" \
+   icemappbe_vgg_histo_backend
+@@ -70,11 +70,11 @@ docker run -d \
+   --privileged \
+   --gpus all \
+   -v $(pwd)/src:/app \
+-  -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
++  -v /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir \
+   --env-file .env.prod \
+   --network "$NETWORK_NAME" \
+   icemappbe_vgg_histo_celery_worker \
+-  celery -A celery_tasks.process_folder worker --pool=solo --loglevel=info --concurrency=1
++  celery -A celery_tasks.process_folder:celery_app worker --pool=solo --loglevel=info --concurrency=1
+ 
+ # Step 7: Verify running containers
+ echo "Checking running containers..."
+diff --git a/src/api/endpoints/data_api.py b/src/api/endpoints/data_api.py
+index e99e71f..2caa765 100644
+--- a/src/api/endpoints/data_api.py
++++ b/src/api/endpoints/data_api.py
+@@ -1,19 +1,9 @@
+-from datetime import datetime
+-from celery.result import AsyncResult
+-import os
+-from glob import glob
+-import logging
+-import re
+-from pathlib import Path
+-
+-logger = logging.getLogger("uvicorn.access")
+-
+ from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
+ from fastapi.responses import FileResponse, JSONResponse
+-from fastapi import APIRouter
+-from fastapi.responses import FileResponse, JSONResponse
+ 
+ from celery_tasks.process_folder import unzip_file, process_tiff_files
++from celery.result import AsyncResult
++
+ from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
+ from config import get_settings
+ from schemas.base import User
+@@ -24,6 +14,15 @@ from backend.inference_backend import InferenceBackend
+ from backend.factory import get_backend
+ from backend.storage import Storage
+ 
++from datetime import datetime
++from pathlib import Path
++from glob import glob
++import logging
++import os
++import re
++
++logger = logging.getLogger("uvicorn.access")
++
+ router = APIRouter()
+ settings = get_settings()
+ 
+diff --git a/src/app.py b/src/app.py
+index e13c1c4..e4ce447 100644
+--- a/src/app.py
++++ b/src/app.py
+@@ -1,10 +1,14 @@
++"""
++This module contains the FastAPI application for the backend service.
++"""
+ import os
+-from pathlib import Path
+-import uvicorn
+-from fastapi import FastAPI
+ import torch
++import uvicorn
+ import logging
+ 
++from pathlib import Path
++from fastapi import FastAPI
++
+ 
+ from starlette.middleware import Middleware
+ from starlette.middleware.cors import CORSMiddleware
+@@ -17,13 +21,10 @@ from backend.factory import create_inference_backend, BackendFactory
+ 
+ settings = get_settings()
+ 
+-# on startup check if iedl_root_dir exist
+-
+-
+ middleware = [
+     Middleware(
+         CORSMiddleware,
+-        allow_origins=["*"],
++        allow_origins=["*"], # Change this to the specific origins in production
+         allow_credentials=True,
+         allow_methods=["*"],
+         allow_headers=["*"],
+@@ -46,6 +47,11 @@ app.include_router(api_router, prefix="/ikem_api")
+ # app before startup
+ @app.on_event("startup")
+ async def startup_event():
++    """
++    Check if they exist and if not
++    create necessary folders and setup logging.
++    """
++        # Create iedl_root_dir if not exist
+     print("Checking if iedl_root_dir exist")
+     if not os.path.exists(settings.iedl_root_dir):
+         os.makedirs(settings.iedl_root_dir)
+@@ -119,6 +125,9 @@ async def startup_event():
+ # app before startup
+ @app.on_event("startup")
+ def check_visible_gpu():
++    """
++    Check if GPU is available and print device info.
++    """
+     # print visible devices
+     if torch.cuda.is_available():
+         print("Visible devices: ", torch.cuda.device_count())
+diff --git a/src/requirements.txt b/src/requirements.txt
+index f337459..c912776 100644
+--- a/src/requirements.txt
++++ b/src/requirements.txt
+@@ -10,13 +10,14 @@
+ # celery
+ # torch
+ # numpy
+-imagecodecs
++numpy>=1.21.1,<1.25
++pandas
++scikit-learn
++scikit-image==0.21.0
+ torch
+ torchvision
+-numpy
+-pandas
++imagecodecs
+ geopandas
+-scikit-learn
+ colour-science
+ shapely
+ openslide-python
+@@ -29,7 +30,6 @@ tifffile
+ multiprocess
+ patchify
+ pyjwt
+-scikit-image
+ wandb
+ fastapi
+ uvicorn[standard]
+diff --git a/src/services/auth.py b/src/services/auth.py
+index 73a1ff3..9f990e4 100644
+--- a/src/services/auth.py
++++ b/src/services/auth.py
+@@ -13,7 +13,7 @@ from schemas.base import User, TokenData
+ from config import get_settings
+ 
+ 
+-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
++oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/ikem_api/token")
+ settings = get_settings()
+ 
+ 

@@ -58,7 +58,7 @@ docker run -d \
   --privileged \
   --gpus all \
   -v $(pwd)/src:/app \
-  -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
+  -v /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir \
   --env-file .env.prod \
   --network "$NETWORK_NAME" \
   icemappbe_vgg_histo_backend
@@ -70,11 +70,11 @@ docker run -d \
   --privileged \
   --gpus all \
   -v $(pwd)/src:/app \
-  -v /mnt/persist/xtanczost/iedl_root_dir:/iedl_root_dir \
+  -v /mnt/persist/xptacek/iedl_root_dir:/iedl_root_dir \
   --env-file .env.prod \
   --network "$NETWORK_NAME" \
   icemappbe_vgg_histo_celery_worker \
-  celery -A celery_tasks.process_folder worker --pool=solo --loglevel=info --concurrency=1
+  celery -A celery_tasks.process_folder:celery_app worker --pool=solo --loglevel=info --concurrency=1
 
 # Step 7: Verify running containers
 echo "Checking running containers..."
