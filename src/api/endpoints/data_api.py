@@ -4,6 +4,7 @@ import os
 from glob import glob
 import logging
 import re
+from pathlib import Path
 
 logger = logging.getLogger("uvicorn.access")
 
@@ -19,6 +20,10 @@ from schemas.base import User
 
 from services.auth import get_current_user
 
+from backend.inference_backend import InferenceBackend
+from backend.factory import get_backend
+from backend.storage import Storage
+
 router = APIRouter()
 settings = get_settings()
 
@@ -30,47 +35,45 @@ settings = get_settings()
 async def predict_structure(
     tiff_ids: list[str],
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
 ) -> PredictStructureResponse:
 
     logger.info(
         f"Predicting structure for tiff ids: {tiff_ids}, from user: {current_user.username}"
     )
     try:
-        tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
 
-        # these tiff files will be processed by celery task
-        tiff_files = []
-        incorrect_tiff_ids = []
-        for tiff_id in tiff_ids:
-            if not re.match(r"\d+_\d+", tiff_id):
-                incorrect_tiff_ids.append(tiff_id)
-            else:
-                tiff_files.extend(glob(f"{tiff_folder}/{tiff_id}*.tif*"))
+        # OK - this is ugly!
+        base_path = backend.storage.get_folderpath(Storage.TIF_FOLDER)
+        available = backend.get_available_inference_files()
 
-        if tiff_files == []:
+        # IDs are file stems.
+        available_ids = [
+            (Path(fi.id).stem.split('.')[0], base_path / fi.id)
+            for fi in available
+        ]
+
+        file_paths = []
+        for id, filepath in available_ids:
+            if id in tiff_ids:
+                file_paths.append(filepath.as_posix())
+
+        # The list to process
+        if len(file_paths) == 0:
             return JSONResponse(
-                content={"message": "No tiff files found"}, status_code=404
+                content={"message": "No tiff files found"}, 
+                status_code=404
             )
 
-        details = {
-            "tiff_files": tiff_files,
-            "tiff_folder": tiff_folder,
-            "bg_mask_folder": f"{settings.iedl_root_dir}/bg_mask_folder",
-            "cell_mask_folder": f"{settings.iedl_root_dir}/cell_mask_folder",
-            "result_folder": f"{settings.iedl_root_dir}/result_folder",
-            "annotations_folder": f"{settings.iedl_root_dir}/annotation_folder",
-            "id_list": tiff_ids,
-        }
-        logger.info(f" Details: {details}")
-        result = process_tiff_files.delay(details)
+        result = process_tiff_files.delay({ "file_paths": file_paths })
         logger.info(f"Task id: {result.id}")
 
         return JSONResponse(
             content={
                 "message": "Processing tiff files started",
-                "incorrect_tiff_ids": incorrect_tiff_ids,
+                "incorrect_tiff_ids": [],
                 "task_id": result.id,
-                "tiff_files": tiff_files,
+                "tiff_files": file_paths,
             },
             status_code=200,
         )
@@ -84,31 +87,34 @@ async def predict_structure(
 @router.post("/upload_zip", response_model=AsyncTaskResponse, status_code=200)
 async def transfer_zip_data(
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
     zipFolder: UploadFile = File(...),
 ) -> AsyncTaskResponse:
 
     logger.info(
-        f"Uploading zip file: {zipFolder.filename}, from user: {current_user.username}"
+        f"Uploading file: {zipFolder.filename}, from user: {current_user.username}"
     )
     try:
-        zip_folder = f"{settings.iedl_root_dir}/zip_folder"
 
-        # save zip file into zip folder
-        with open(f"{zip_folder}/{zipFolder.filename}", "wb") as f:
+        # Copy the given file to the ZIP folder    
+        target_filename = backend.storage.get_filepath(
+            Storage.ZIP_FOLDER, 
+            zipFolder.filename,
+            create_parents=True
+        )
+
+        # Save the uploaded file into the ZIP_FOLDER
+        with open(f"{target_filename.as_posix()}", "wb") as f:
             while contents := await zipFolder.read(1024 * 1024):
                 f.write(contents)
 
-        # process zip file
-        result = unzip_file.delay(
-            {
-                "zip_path": f"{zip_folder}/{zipFolder.filename}",
-                "tiff_folder": f"{settings.iedl_root_dir}/tiff_folder",
-            }
-        )
+        # Accept the file by the backend (via Celery)
+        result = unzip_file.delay({ "file_path": target_filename.as_posix() })
+
         logger.info(f"Task id: {result.id}")
 
         logger.info(
-            f"Zip file uploaded successfully: {zipFolder.filename}, from user: {current_user.username}"
+            f"File uploaded successfully: {zipFolder.filename}, from user: {current_user.username}"
         )
         return JSONResponse(
             content={"message": "Data transferred successfully", "task_id": result.id},
@@ -154,26 +160,25 @@ async def get_task_status(
 @router.get("/get-tiff-files")
 async def get_tiff_files(
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
 ):
     logger.info(f"Getting tiff files for user: {current_user.username}")
-    tiff_folder = f"{settings.iedl_root_dir}/tiff_folder"
-    tiff_files = glob(f"{tiff_folder}/*.tif*")
 
-    files_info = []
-    for file in tiff_files:
-        file_name = os.path.basename(file)
-        file_id = file.split("/")[-1]
-        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
-        file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
+    # List what we've got
+    files = backend.get_available_inference_files()
 
-        files_info.append(
-            {"id": file_id, "last_modified": mod_time, "size_bytes": file_size}
-        )
+    list_files = []
+    for file_info in files:
+        list_files.append({
+            "id": file_info.id, 
+            "last_modified": file_info.last_modified,
+            "size_bytes": file_info.size_bytes
+        })
 
-    logger.info(f"Found {len(files_info)} tiff files for user: {current_user.username}")
+    logger.info(f"Found {len(list_files)} tiff files for user: {current_user.username}")
 
     return JSONResponse(
-        content={"tiff_files": files_info},
+        content={"tiff_files": list_files},
         status_code=200,
     )
 
@@ -182,27 +187,25 @@ async def get_tiff_files(
 @router.get("/get-geojson-files")
 async def get_geojson_files(
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
 ):
     logger.info(f"Getting geojson files for user: {current_user.username}")
-    geojson_folder = f"{settings.iedl_root_dir}/annotation_folder"
-    geojson_files = glob(f"{geojson_folder}/*.geojson")
 
-    logger.info(
-        f"Found {len(geojson_files)} geojson files for user: {current_user.username}"
-    )
+    # List what we've got
+    files = backend.get_result_files()
 
-    files_info = []
-    for file in geojson_files:
-        file_id = file.split("/")[-1]
-        mod_time = datetime.fromtimestamp(os.path.getmtime(file)).strftime("%Y-%m-%d")
-        file_size = os.path.getsize(file) / (1024 * 1024)  # Get file size in MB
+    list_files = []
+    for file_info in files:
+        list_files.append({
+            "id": file_info.id, 
+            "last_modified": file_info.last_modified,
+            "size_bytes": file_info.size_bytes
+        })
 
-        files_info.append(
-            {"id": file_id, "last_modified": mod_time, "size_bytes": file_size}
-        )
+    logger.info(f"Found {len(list_files)} geojson files for user: {current_user.username}")
 
     return JSONResponse(
-        content={"geojson_files": files_info},
+        content={"geojson_files": list_files},
         status_code=200,
     )
 
@@ -212,30 +215,15 @@ async def download_file(
     tiff_id: str,
     type: str = None,
     current_user: User = Depends(get_current_user),
+    backend: InferenceBackend = Depends(get_backend),
 ):  # Changed id to str
-
-    # check wtih regex if tiff id is in form <ID>_<ID2>
-    if not tiff_id:
-        raise HTTPException(status_code=400, detail="Invalid tiff id")
-
-    if not type:
-        raise HTTPException(status_code=400, detail="Invalid type")
-
-    if not re.match(r"\d+_\d+", tiff_id):
-        raise HTTPException(
-            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
-        )
 
     logger.info(
         f"Downloading geojson file for tiff id: {tiff_id} and type: {type}, from user: {current_user.username}"
     )
-    if type != "tissue" and type != "cell":
-        raise HTTPException(
-            status_code=400, detail="Invalid type, must be tissue or cell"
-        )
 
     tiff_folder = f"{settings.iedl_root_dir}/annotation_folder"
-    file_paths = glob(f"{tiff_folder}/{type}_mask_{tiff_id}*.geojson")
+    file_paths = glob(f"{tiff_folder}/{tiff_id}")
 
     if not file_paths:
         raise HTTPException(status_code=404, detail="File not found")
@@ -252,11 +240,8 @@ async def download_file(
 async def clear_tiff_data(
     tiff_id: str,
     current_user: User = Depends(get_current_user),
-):
-    if not re.match(r"\d+_\d+", tiff_id):
-        raise HTTPException(
-            status_code=400, detail="Invalid tiff id, should be in form <ID>_<ID2>"
-        )
+    backend: InferenceBackend = Depends(get_backend),
+):    
 
     logger.info(
         f"Clearing tiff data for tiff id: {tiff_id}, from user: {current_user.username}"

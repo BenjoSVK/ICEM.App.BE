@@ -1,0 +1,49 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Local Process",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/tools/local_process.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-f", "iedl_root_dir/tiff_folder/2724_part_2.tif",
+                "-m", "iedl",
+                "-s", "./iedl_root_dir"
+            ]
+        },
+        {
+            "name": "Local Upload",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/tools/local_upload.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-i", "iedl_root_dir/temp/2724.zip",
+                "-s", "./iedl_root_dir"
+            ]
+        },
+        {
+            "name": "Celery Worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "celery",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src",
+            "args": [
+                "-A",
+                "celery_tasks.process_folder",
+                "worker",
+                "--loglevel=info",
+                "--concurrency=1",
+                "--pool=solo",
+            ]
+        }
+    ]
+}

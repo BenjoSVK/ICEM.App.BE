@@ -1,0 +1,63 @@
+services:
+  # Broker Service
+  vgg_histo_redis:
+    container_name: vgg_histo_redis
+    image: redis
+    ports:
+      - 6379:6379
+
+  vgg_histo_backend:
+    container_name: vgg_histo_backend
+    image: ikem-backend
+    ports:
+      - 7030:8000
+    volumes:
+      - /opt/histo-backend/iedl_root_dir:/iedl_root_dir
+    depends_on:
+      - vgg_histo_redis
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      REDIS_HOST: 10.0.50.30
+      REDIS_PORT: 6379
+      UVICORN_PORT: 8000
+      UVICORN_HOST: 0.0.0.0
+      UVICORN_WORKERS: 1
+      PG_PORT: 5432
+      PG_HOST: vgg_histo_db
+      PG_USER: iedl_user
+      PG_PASSWORD: iedl_password
+      PG_DB: iedl_db
+      SECRET_KEY: 413134fac717ca3688
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      IEDL_ROOT_DIR: /iedl_root_dir
+      RELOAD: False
+      APP_NAME: iedl-api
+      LOG_LEVEL: debug
+      DEPLOY: dev
+    networks:
+      - vgg_histo_network
+
+
+  vgg_histo_db:
+    container_name: vgg_histo_db
+    image: postgres:13
+    #ports:
+    #  - 5432:5432
+    environment:
+      POSTGRES_DB: iedl_db
+      POSTGRES_USER: iedl_user
+      POSTGRES_PASSWORD: iedl_password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - vgg_histo_network
+
+networks:
+  vgg_histo_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    external: true

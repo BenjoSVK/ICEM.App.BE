@@ -1,0 +1,42 @@
+services:
+  # Worker Proces
+  vgg_histo_worker:
+    container_name: vgg_histo_worker
+    image: ikem-worker
+    volumes:
+      - /opt/histo-backend/iedl_root_dir:/iedl_root_dir
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      REDIS_HOST: vgg_histo_redis
+      REDIS_PORT: 6379
+      IEDL_ROOT_DIR: /iedl_root_dir
+
+      # These are not relevant... grr
+      UVICORN_PORT: 8000
+      UVICORN_HOST: 0.0.0.0
+      UVICORN_WORKERS: 1
+      PG_PORT: 5432
+      PG_HOST: vgg_histo_db
+      PG_USER: iedl_user
+      PG_PASSWORD: iedl_password
+      PG_DB: iedl_db
+      SECRET_KEY: 413134fac717ca3688
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      RELOAD: False
+      APP_NAME: iedl-api
+      LOG_LEVEL: debug
+      DEPLOY: dev
+
+    networks:
+      - vgg_histo_network
+
+
+networks:
+  vgg_histo_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    external: true
