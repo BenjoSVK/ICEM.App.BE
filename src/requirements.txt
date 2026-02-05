@@ -1,18 +1,6 @@
-# fastapi
-# uvicorn[standard]
-# pydantic
-# python-multipart
-# celery
-# redis
-# flower
-# pydantic
-# python-dotenv
-# celery
-# torch
-# numpy
 numpy>=1.21.1,<1.25
 pandas
-scikit-learn
+scikit-learn==1.1.3
 scikit-image==0.21.0
 torch
 torchvision
@@ -30,9 +18,11 @@ tifffile
 multiprocess
 patchify
 pyjwt
+bcrypt
 wandb
 fastapi
 uvicorn[standard]
+slowapi
 pydantic
 python-multipart
 celery
