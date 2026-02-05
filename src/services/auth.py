@@ -1,5 +1,6 @@
 import jwt
 import datetime
+import bcrypt
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -17,7 +18,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/ikem_api/token")
 settings = get_settings()
 
 
-def verify_password(plain_password, db_password):
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt. Use this when storing new passwords."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, db_password: str) -> bool:
+    """Verify password against stored hash. Supports bcrypt hashes and plaintext (legacy)."""
+    if not db_password:
+        return False
+    if db_password.startswith("$2") and len(db_password) > 20:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), db_password.encode("utf-8")
+        )
     return plain_password == db_password
 
 
