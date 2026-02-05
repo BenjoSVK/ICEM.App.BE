@@ -1,5 +1,6 @@
 
 import os
+import logging
 import cv2
 import numpy as np
 import geopandas as gpd
@@ -11,6 +12,8 @@ from multiprocessing import Pool
 from iedl_segmentation.cell_postprocessing import (
     process_batch
 )
+
+logger = logging.getLogger(__name__)
 
 
 SHAPE_THRESHOLD = -1
@@ -39,7 +42,7 @@ def performFilters(
 ) -> np.array:
 
     start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\t --> START - perform cell filter: {tiff_id}, time: {start}")
+    logger.warning(f"START - perform cell filter: tiff_id={tiff_id}, time={start}")
 
     geojson_cells_classes = []
 
@@ -58,6 +61,9 @@ def performFilters(
 
     if batch_size_set != 0:
         batch_size = batch_size_set
+    elif MAX_WORKERS == 1 and total_contours > 500:
+        # Process in chunks so we can log progress (avoids "stuck" appearance)
+        batch_size = 500
 
     # Prepare arguments for parallel processing
     args_list = []
@@ -75,12 +81,17 @@ def performFilters(
         )
         args_list.append(args)
 
+    num_batches = len(args_list)
+    logger.warning(f"cell filter: total_contours={total_contours}, num_batches={num_batches}, batch_size={batch_size}")
     # Use multiprocessing to parallelize batch processing
     if MAX_WORKERS > 1:
         with Pool(processes=MAX_WORKERS) as pool:
             results = pool.map(process_batch, args_list)
     else:
-        results = [ process_batch(x) for x in args_list ]
+        results = []
+        for idx, x in enumerate(args_list):
+            results.append(process_batch(x))
+            logger.warning(f"cell filter progress: batch {idx + 1}/{num_batches}, time: {datetime.now().strftime('%H:%M:%S')}")
 
     # Combine results
     for result in results:
@@ -103,6 +114,6 @@ def performFilters(
     data[3, :, :] = new_mask
 
     end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\t --> END - perform cell filter: {tiff_id}, time: {end}")
+    logger.warning(f"END - perform cell filter: tiff_id={tiff_id}, time={end}")
 
     return data

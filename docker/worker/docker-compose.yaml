@@ -5,6 +5,8 @@ services:
     image: ikem-worker
     volumes:
       - /opt/histo-backend/iedl_root_dir:/iedl_root_dir
+    env_file:
+      - ../../.env
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
@@ -19,9 +21,7 @@ services:
       PG_PORT: 5432
       PG_HOST: vgg_histo_db
       PG_USER: iedl_user
-      PG_PASSWORD: iedl_password
       PG_DB: iedl_db
-      SECRET_KEY: 413134fac717ca3688
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       RELOAD: False

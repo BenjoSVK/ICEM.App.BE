@@ -35,6 +35,9 @@ services:
     command: celery -A celery_tasks.process_folder worker --loglevel=info --concurrency=1
     env_file:
       - .env
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./src:/app
       - ./iedl_root_dir:/iedl_root_dir
@@ -43,6 +46,16 @@ services:
       - vgg_histo_backend
     networks:
       - vgg_histo_network
+    deploy:
+      resources:
+        limits:
+          memory: 48G
+        reservations:
+          memory: 16G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   vgg_histo_db:
     container_name: vgg_histo_db

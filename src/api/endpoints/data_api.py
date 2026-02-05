@@ -141,18 +141,23 @@ async def get_task_status(
             content={"status": "Pending", "task_id": task_id, "result": None},
             status_code=200,
         )
-    elif task_result.state == "SUCCESS":
+    if task_result.state in ("STARTED", "PROGRESS"):
+        # Task is still running; FE shows "Processing" and keeps polling
+        return JSONResponse(
+            content={"status": "Pending", "task_id": task_id, "result": None},
+            status_code=200,
+        )
+    if task_result.state == "SUCCESS":
         result = task_result.get()
         return JSONResponse(
             content={"status": "Success", "task_id": task_id, "result": result},
             status_code=200,
         )
-    else:
-
-        return JSONResponse(
-            content={"status": "Failed", "task_id": task_id, "result": None},
-            status_code=200,
-        )
+    # FAILURE, RETRY, or any other terminal failure
+    return JSONResponse(
+        content={"status": "Failed", "task_id": task_id, "result": None},
+        status_code=200,
+    )
 
 
 # get every tiff file in the tiff folder

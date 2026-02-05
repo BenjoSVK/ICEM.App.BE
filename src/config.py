@@ -3,6 +3,7 @@ This module contains the Setting class with all app configurations.
 """
 
 import os
+import secrets
 from functools import lru_cache
 import torch
 

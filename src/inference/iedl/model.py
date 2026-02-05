@@ -181,20 +181,20 @@ class IedlModel(IInferenceModel):
         output_cells = np.stack([ i[0], i[1], i[2], mask_cells])
         # Post processing
 
-        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Filtering cell mask")
-        output_cells = performFilters(output_cells, tiff_id="")
+        logging.info(f"IedlModel.process_file - {image_file_path.name} - Filtering cell mask")
+        output_cells = performFilters(output_cells, tiff_id=image_file_path.stem)
+        logging.info(f"IedlModel.process_file - {image_file_path.name} - Cell filter done, creating tissue mask")
 
         #-----------------------------------------------
         # 3. Create tissue mask
-        
-        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Creating tissue mask")
         mask_tissue = self._create_tissue_mask(output_cells)
+        logging.info(f"IedlModel.process_file - {image_file_path.name} - Tissue mask done, exporting GeoJSON")
 
         # Export
         exp_filepath = storage.get_filepath(Storage.ANNOTATION_FOLDER, f"{job_name}.geojson", True)
         self.exporter.write_to_file(mask_tissue, exp_filepath)
 
-        logging.debug(f"IedlModel.process_file - {image_file_path.name} - Done")
+        logging.info(f"IedlModel.process_file - {image_file_path.name} - Done")
 
 
 
