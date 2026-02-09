@@ -1,4 +1,3 @@
-import uuid
 from enum import Enum
 
 from pydantic import BaseModel
@@ -14,10 +13,14 @@ class AsyncResultStatus(str, Enum):
 
 
 class AsyncTaskResponse(BaseModel):
-    """Represents the response containing status of the background task."""
-    task_id: uuid.UUID
-    status: AsyncResultStatus
+    """Response for async operations (e.g. upload_zip) returning task id."""
+    message: str
+    task_id: str
 
 
 class PredictStructureResponse(BaseModel):
-    s: str
+    """Response when predict_structure successfully starts processing."""
+    message: str
+    incorrect_tiff_ids: list[str] = []
+    task_id: str
+    tiff_files: list[str]

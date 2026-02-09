@@ -1,10 +1,13 @@
 import os
+import logging
 from celery import Celery
 from pathlib import Path
 
 
 from backend.inference_backend import InferenceBackend
 from backend.factory import BackendFactory, create_inference_backend, get_backend
+
+logger = logging.getLogger(__name__)
 
 
 REDIS_HOST = os.environ.get("REDIS_HOST")
@@ -35,12 +38,21 @@ def process_tiff_files(details):
 
     files = details["file_paths"]
     for file_path in files:
-
-        # Run inference on the given file
-        backend.execute_inference(
-            image_file_path=Path(file_path),
-            model_name="iedl"
-        )
+        path = Path(file_path)
+        try:
+            backend.execute_inference(
+                image_file_path=path,
+                model_name="iedl"
+            )
+        except ValueError as e:
+            if "Could not load image from" in str(e):
+                logger.warning(
+                    "File not found or unreadable, skipping: %s",
+                    path.as_posix(),
+                    exc_info=False,
+                )
+            else:
+                raise
 
     return {"result": "success"}
 

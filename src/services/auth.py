@@ -23,15 +23,23 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_password(plain_password: str, db_password: str) -> bool:
-    """Verify password against stored hash. Supports bcrypt hashes and plaintext (legacy)."""
-    if not db_password:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against stored bcrypt hash. Plaintext comparison is not supported."""
+    if not hashed_password or not plain_password:
         return False
-    if db_password.startswith("$2") and len(db_password) > 20:
+    # Only accept bcrypt hashes ($2a$, $2b$, $2y$)
+    if not (
+        hashed_password.startswith("$2")
+        and len(hashed_password) > 20
+        and hashed_password[3] == "$"
+    ):
+        return False
+    try:
         return bcrypt.checkpw(
-            plain_password.encode("utf-8"), db_password.encode("utf-8")
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
         )
-    return plain_password == db_password
+    except (ValueError, TypeError):
+        return False
 
 
 def get_user(db, username: str):

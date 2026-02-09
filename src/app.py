@@ -30,7 +30,7 @@ middleware = [
     Middleware(
         CORSMiddleware,
         allow_origins=["*"], # Change this to the specific origins in production
-        allow_credentials=True,
+        allow_credentials=True, # And also this
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -47,16 +47,15 @@ BackendFactory().initialize(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create dirs, setup logging, print GPU info. Shutdown: (none)."""
-    # Create iedl_root_dir if not exist
-    print("Checking if iedl_root_dir exist")
+
     if not os.path.exists(settings.iedl_root_dir):
         os.makedirs(settings.iedl_root_dir)
-        print(f"Created {settings.iedl_root_dir} directory")
+        print(f"INFO:     Created {settings.iedl_root_dir} directory")
 
     log_file = os.path.join(settings.iedl_root_dir, "ikem.log")
     if not os.path.exists(log_file):
         with open(log_file, "w") as f:
-            f.write("Created log file")
+            f.write("INFO:     Created log file")
 
     logger = logging.getLogger("uvicorn.access")
     logger.handlers.clear()
@@ -81,15 +80,13 @@ async def lifespan(app: FastAPI):
         folder = os.path.join(settings.iedl_root_dir, folder_name)
         if not os.path.exists(folder):
             os.makedirs(folder)
-            print(f"Created {folder} directory")
+            print(f"INFO:     Created {folder} directory")
 
     if torch.cuda.is_available():
-        print("Visible devices: ", torch.cuda.device_count())
-        print("Current device: ", torch.cuda.current_device())
-        print("Device name: ", torch.cuda.get_device_name(torch.cuda.current_device()))
+        print("INFO:     Visible devices: ", torch.cuda.device_count())
+        print("INFO:     Device name: ", torch.cuda.get_device_name(torch.cuda.current_device()))
     else:
-        print("No GPU available")
-
+        print("INFO:     No GPU available")
     yield
 
 
