@@ -77,7 +77,9 @@ class Settings:
 
     cell_model_path = "/iedl_root_dir/trained_models/unet_resnet_final_ikem_cell_seg"
     tissue_model_path = "/iedl_root_dir/trained_models/AdditionalData_PyramidAttentionUNet_multiclass_LAB_batchnorm_scaled_BCE+DC.pt"
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
     class TissueConfig:
         def __init__(self):
