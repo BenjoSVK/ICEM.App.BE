@@ -1,5 +1,4 @@
 services:
-  # Broker Service
   vgg_histo_redis:
     container_name: vgg_histo_redis
     image: redis
@@ -20,6 +19,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      PYTHONUNBUFFERED: 1
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
       REDIS_HOST: 10.0.50.30
@@ -45,8 +45,8 @@ services:
   vgg_histo_db:
     container_name: vgg_histo_db
     image: postgres:17
-    #ports:
-    #  - 5432:5432
+    ports:
+     - 5432:5432
     environment:
       POSTGRES_DB: iedl_db
       POSTGRES_USER: iedl_user
