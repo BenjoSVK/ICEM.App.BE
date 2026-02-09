@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
 from fastapi.responses import FileResponse, JSONResponse
 
-from celery_tasks.process_folder import unzip_file, process_tiff_files
+from celery_tasks.process_folder import celery_app, unzip_file, process_tiff_files
 from celery.result import AsyncResult
 
 from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
@@ -20,11 +20,18 @@ from glob import glob
 import logging
 import os
 import re
+from typing import Union
 
 logger = logging.getLogger("uvicorn.access")
 
 router = APIRouter()
 settings = get_settings()
+
+
+@router.get("/test")
+def test():
+    """Simple health check: returns status ok when the API is up."""
+    return {"status": "ok"}
 
 
 # this endpoint process list of tiff files with given ids, the ids are in requests as list
@@ -35,7 +42,7 @@ async def predict_structure(
     tiff_ids: list[str],
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-) -> PredictStructureResponse:
+) -> Union[PredictStructureResponse, JSONResponse]:
 
     logger.info(
         f"Predicting structure for tiff ids: {tiff_ids}, from user: {current_user.username}"
@@ -60,21 +67,18 @@ async def predict_structure(
         # The list to process
         if len(file_paths) == 0:
             return JSONResponse(
-                content={"message": "No tiff files found"}, 
-                status_code=404
+                content={"message": "No tiff files found"},
+                status_code=404,
             )
 
-        result = process_tiff_files.delay({ "file_paths": file_paths })
+        result = process_tiff_files.delay({"file_paths": file_paths})
         logger.info(f"Task id: {result.id}")
 
-        return JSONResponse(
-            content={
-                "message": "Processing tiff files started",
-                "incorrect_tiff_ids": [],
-                "task_id": result.id,
-                "tiff_files": file_paths,
-            },
-            status_code=200,
+        return PredictStructureResponse(
+            message="Processing tiff files started",
+            incorrect_tiff_ids=[],
+            task_id=result.id,
+            tiff_files=file_paths,
         )
 
     except Exception as e:
@@ -88,8 +92,8 @@ async def transfer_zip_data(
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
     zipFolder: UploadFile = File(...),
-) -> AsyncTaskResponse:
-
+) -> Union[AsyncTaskResponse, JSONResponse]:
+    # Log as soon as upload request is received (before reading body)
     logger.info(
         f"Uploading file: {zipFolder.filename}, from user: {current_user.username}"
     )
@@ -103,6 +107,9 @@ async def transfer_zip_data(
         )
 
         # Save the uploaded file into the ZIP_FOLDER
+        logger.info(
+            f"Receiving file content: {zipFolder.filename}, from user: {current_user.username}"
+        )
         with open(f"{target_filename.as_posix()}", "wb") as f:
             while contents := await zipFolder.read(1024 * 1024):
                 f.write(contents)
@@ -115,9 +122,9 @@ async def transfer_zip_data(
         logger.info(
             f"File uploaded successfully: {zipFolder.filename}, from user: {current_user.username}"
         )
-        return JSONResponse(
-            content={"message": "Data transferred successfully", "task_id": result.id},
-            status_code=200,
+        return AsyncTaskResponse(
+            message="Data transferred successfully",
+            task_id=result.id,
         )
 
     except Exception as e:
@@ -134,7 +141,7 @@ async def get_task_status(
     logger.info(
         f"Getting task status for task id: {task_id}, from user: {current_user.username}"
     )
-    task_result = AsyncResult(task_id)
+    task_result = AsyncResult(task_id, app=celery_app)
 
     if task_result.state == "PENDING":
         return JSONResponse(

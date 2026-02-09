@@ -3,9 +3,9 @@
 ## How to access endpoints
 
 Example:
-`http://localhost:8000/ikem_api/test`
+`http://localhost:7030/ikem_api/test`
 
-Links for endpoints documentation (server needst to be started first): `http://localhost:8000/docs/`
+Links for endpoints documentation (server needst to be started first): `http://localhost:7030/docs/`
 
 
 ## How to start application?
@@ -30,14 +30,26 @@ for rebuild
 ### Production
 
 # Init testing database
-psql -U postgres -d mydatabase
+Passwords are stored as **bcrypt hashes**.
 
+`psql -U postgres -d mydatabase`:
+
+```sql
 CREATE TABLE IF NOT EXISTS "users" (
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL
 );
+```
 
--- Insert a record
-INSERT INTO "users" (username, password) VALUES ('admin', 'admin');
+Generate a bcrypt hash for your password (e.g. `admin`), then insert it:
 
+```bash
+python3 -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode())"
+```
+
+Copy the output and use it in the INSERT (replace `PASTE_HASH_HERE` with the actual hash):
+
+```sql
+INSERT INTO "users" (username, password) VALUES ('admin', 'PASTE_HASH_HERE');
 SELECT * FROM "users";
+```
