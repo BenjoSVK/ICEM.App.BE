@@ -29,6 +29,9 @@ logger = logging.getLogger("uvicorn.access")
 router = APIRouter()
 settings = get_settings()
 
+from backend.inference_backend import InferenceBackend
+from backend.factory import get_backend
+from backend.storage import Storage
 
 @router.get("/test")
 def test() -> dict:

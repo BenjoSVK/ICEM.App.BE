@@ -48,6 +48,8 @@ services:
       DEPLOY: dev
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+       NVIDIA_VISIBLE_DEVICES: all
+       NVIDIA_DRIVER_CAPABILITIES: compute,utility
     volumes:
       - ./src:/app
       - ./iedl_root_dir:/iedl_root_dir
@@ -76,6 +78,9 @@ services:
       POSTGRES_DB: ${PG_DB}
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:

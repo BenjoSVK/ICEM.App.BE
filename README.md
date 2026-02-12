@@ -70,6 +70,28 @@ python3 -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt()).decod
 
 Copy the output and use it in the INSERT (replace `PASTE_HASH_HERE` with the actual hash):
 
+### Production
+
+# Init testing database
+Passwords are stored as **bcrypt hashes**.
+
+`psql -U postgres -d mydatabase`:
+
+```sql
+CREATE TABLE IF NOT EXISTS "users" (
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+```
+
+Generate a bcrypt hash for your password (e.g. `admin`), then insert it:
+
+```bash
+python3 -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode())"
+```
+
+Copy the output and use it in the INSERT (replace `PASTE_HASH_HERE` with the actual hash):
+
 ```sql
 INSERT INTO "users" (username, password) VALUES ('admin', 'PASTE_HASH_HERE');
 SELECT * FROM "users";
