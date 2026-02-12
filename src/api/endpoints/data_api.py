@@ -1,26 +1,28 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
-from fastapi.responses import FileResponse, JSONResponse
-
-from celery_tasks.process_folder import celery_app, unzip_file, process_tiff_files
-from celery.result import AsyncResult
-
-from schemas.TaskResponses import AsyncTaskResponse, PredictStructureResponse
-from config import get_settings
-from schemas.base import User
-
-from services.auth import get_current_user
-
-from backend.inference_backend import InferenceBackend
-from backend.factory import get_backend
-from backend.storage import Storage
-
-from datetime import datetime
-from pathlib import Path
-from glob import glob
+"""
+Data API endpoints: TIFF/GeoJSON listing, structure prediction, zip upload, task status, download, clear.
+"""
 import logging
 import os
-import re
-from typing import Union
+from pathlib import Path
+from glob import glob
+from typing import Optional
+
+from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
+from fastapi.responses import FileResponse, JSONResponse
+from celery.result import AsyncResult
+from celery_tasks.process_folder import celery_app, process_tiff_files, unzip_file
+
+from config import get_settings
+from schemas.base import User
+from schemas.TaskResponses import (
+    AsyncTaskResponse,
+    PredictStructureRequest,
+    PredictStructureResponse,
+)
+from services.auth import get_current_user
+from backend.factory import get_backend
+from backend.inference_backend import InferenceBackend
+from backend.storage import Storage
 
 logger = logging.getLogger("uvicorn.access")
 
@@ -29,7 +31,7 @@ settings = get_settings()
 
 
 @router.get("/test")
-def test():
+def test() -> dict:
     """Simple health check: returns status ok when the API is up."""
     return {"status": "ok"}
 
@@ -39,10 +41,11 @@ def test():
     "/predict_structure", response_model=PredictStructureResponse, status_code=200
 )
 async def predict_structure(
-    tiff_ids: list[str],
+    body: PredictStructureRequest,
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-) -> Union[PredictStructureResponse, JSONResponse]:
+) -> PredictStructureResponse:
+    tiff_ids = body.tiff_ids
 
     logger.info(
         f"Predicting structure for tiff ids: {tiff_ids}, from user: {current_user.username}"
@@ -66,10 +69,7 @@ async def predict_structure(
 
         # The list to process
         if len(file_paths) == 0:
-            return JSONResponse(
-                content={"message": "No tiff files found"},
-                status_code=404,
-            )
+            raise HTTPException(status_code=404, detail="No tiff files found")
 
         result = process_tiff_files.delay({"file_paths": file_paths})
         logger.info(f"Task id: {result.id}")
@@ -82,8 +82,9 @@ async def predict_structure(
         )
 
     except Exception as e:
-        return JSONResponse(
-            content={"message": f"Error processing file: {str(e)}"}, status_code=500
+        logger.exception("Error processing predict_structure request")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing file: {str(e)}"
         )
 
 
@@ -92,7 +93,7 @@ async def transfer_zip_data(
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
     zipFolder: UploadFile = File(...),
-) -> Union[AsyncTaskResponse, JSONResponse]:
+) -> AsyncTaskResponse:
     # Log as soon as upload request is received (before reading body)
     logger.info(
         f"Uploading file: {zipFolder.filename}, from user: {current_user.username}"
@@ -128,8 +129,9 @@ async def transfer_zip_data(
         )
 
     except Exception as e:
-        return JSONResponse(
-            content={"message": f"Error processing file: {str(e)}"}, status_code=500
+        logger.exception("Error processing upload_zip request")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing file: {str(e)}"
         )
 
 
@@ -137,7 +139,8 @@ async def transfer_zip_data(
 async def get_task_status(
     task_id: str,
     current_user: User = Depends(get_current_user),
-):
+) -> JSONResponse:
+    """Return Celery task status (Pending, Success, or Failed) and result if completed."""
     logger.info(
         f"Getting task status for task id: {task_id}, from user: {current_user.username}"
     )
@@ -167,12 +170,12 @@ async def get_task_status(
     )
 
 
-# get every tiff file in the tiff folder
 @router.get("/get-tiff-files")
 async def get_tiff_files(
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-):
+) -> JSONResponse:
+    """List all TIFF files available for inference (id, last_modified, size_bytes)."""
     logger.info(f"Getting tiff files for user: {current_user.username}")
 
     # List what we've got
@@ -194,12 +197,12 @@ async def get_tiff_files(
     )
 
 
-# get geojson files
 @router.get("/get-geojson-files")
 async def get_geojson_files(
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-):
+) -> JSONResponse:
+    """List all GeoJSON result files (id, last_modified, size_bytes)."""
     logger.info(f"Getting geojson files for user: {current_user.username}")
 
     # List what we've got
@@ -224,11 +227,11 @@ async def get_geojson_files(
 @router.get("/download_geojson/{tiff_id}")
 async def download_file(
     tiff_id: str,
-    type: str = None,
+    type: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-):  # Changed id to str
-
+) -> FileResponse:
+    """Download GeoJSON file for the given tiff_id (optionally filtered by type)."""
     logger.info(
         f"Downloading geojson file for tiff id: {tiff_id} and type: {type}, from user: {current_user.username}"
     )
@@ -252,8 +255,8 @@ async def clear_tiff_data(
     tiff_id: str,
     current_user: User = Depends(get_current_user),
     backend: InferenceBackend = Depends(get_backend),
-):    
-
+) -> JSONResponse:
+    """Remove all files (TIFF, masks, results, annotations) associated with the given tiff_id."""
     logger.info(
         f"Clearing tiff data for tiff id: {tiff_id}, from user: {current_user.username}"
     )

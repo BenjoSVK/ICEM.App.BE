@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AsyncResultStatus(str, Enum):
@@ -16,6 +16,11 @@ class AsyncTaskResponse(BaseModel):
     """Response for async operations (e.g. upload_zip) returning task id."""
     message: str
     task_id: str
+
+
+class PredictStructureRequest(BaseModel):
+    """Request body for predict_structure - list of tiff IDs must not be empty."""
+    tiff_ids: list[str] = Field(..., min_length=1, description="Non-empty list of tiff file IDs")
 
 
 class PredictStructureResponse(BaseModel):

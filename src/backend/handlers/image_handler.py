@@ -1,21 +1,24 @@
-from pathlib import Path
-import shutil
+"""
+Handler for image files: copies supported TIFF/WSI files into the TIFF folder.
+"""
 import logging
+import shutil
+from pathlib import Path
 from typing import List
+
 from schemas.file_info import FileInfo
-from backend.utils import get_file_info
 
-from backend.storage import Storage
 from backend.file_handlers import IFileHandler, IFileHandlers
-
+from backend.storage import Storage
+from backend.utils import get_file_info
 
 logger = logging.getLogger("uvicorn.access")
 
 
 class ImageFileHandler(IFileHandler):
-    EXTENSIONS = [
-        ".tif", ".tiff", ".wsi", ".vsi"
-    ]
+    """Accepts .tif, .tiff, .wsi, .vsi files and copies them into the TIFF folder."""
+
+    EXTENSIONS = [".tif", ".tiff", ".wsi", ".vsi"]
 
     def is_supported(self, file_path: Path) -> bool:
         ext = file_path.suffix.lower()

@@ -6,7 +6,5 @@ src/transfered_data
 iedl_root_dir
 
 .env
-.env.local
-.env.prod
 .env.*
 !.env.example

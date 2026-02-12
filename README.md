@@ -16,18 +16,39 @@ Links for endpoints documentation (server needst to be started first): `http://l
 
 ***Info***: needs to be located in a main folder (cd ICEM.App.BE)
 
-### Production
-
 ## Docker
 
-### Local
-`docker-compose -f docker/docker-compose.dev.yml up`
+Initial create of network:
 
-for rebuild
+```bash
+docker network create vgg_histo_network
+docker volume create db_data
+```
 
-`docker-compose -f docker/docker-compose.dev.yml up --build`
+### Development
+Uses `.env`. From repo root:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+Rebuild:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
 
 ### Production
+
+```bash
+docker compose -f docker-compose.prod.yaml up -d
+```
+
+Rebuild:
+
+```bash
+docker compose -f docker-compose.prod.yaml up -d --build
+```
 
 # Init testing database
 Passwords are stored as **bcrypt hashes**.
