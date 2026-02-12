@@ -1,21 +1,22 @@
+"""
+Inference backend: accepts uploads, lists TIFF/result files, and runs inference via an engine.
+"""
 import logging
-
 from pathlib import Path
 from typing import List, Optional
 
+from backend.file_handlers import FileHandlers
 from backend.storage import Storage
+from backend.utils import get_file_info
 from inference.inference_engine import InferenceEngine
 from schemas.file_info import FileInfo
-
-from backend.utils import get_file_info
-from backend.file_handlers import FileHandlers
-
 
 logger = logging.getLogger("uvicorn.access")
 
 
-
 class InferenceBackend:
+    """Orchestrates storage, file handlers, and optional inference engine."""
+
     def __init__(
         self,
         storage: Storage,
@@ -69,14 +70,12 @@ class InferenceBackend:
 
 
     def execute_inference(
-        self, 
+        self,
         image_file_path: Path,
-        model_name: str
-    ):
-        
-        logger.info(f"InferenceBackend.execute_inference - {image_file_path.as_posix()}")
-        
+        model_name: str,
+    ) -> None:
         """Synchronously execute model inference on the given file."""
+        logger.info(f"InferenceBackend.execute_inference - {image_file_path.as_posix()}")
         if self.engine is None:
             raise RuntimeError("Inference backend does not have a valid inference engine.")
         

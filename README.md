@@ -16,16 +16,59 @@ Links for endpoints documentation (server needst to be started first): `http://l
 
 ***Info***: needs to be located in a main folder (cd ICEM.App.BE)
 
-### Production
-
 ## Docker
 
-### Local
-`docker-compose -f docker/docker-compose.dev.yml up`
+Initial create of network:
 
-for rebuild
+```bash
+docker network create vgg_histo_network
+docker volume create db_data
+```
 
-`docker-compose -f docker/docker-compose.dev.yml up --build`
+### Development
+Uses `.env`. From repo root:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+Rebuild:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+### Production
+
+```bash
+docker compose -f docker-compose.prod.yaml up -d
+```
+
+Rebuild:
+
+```bash
+docker compose -f docker-compose.prod.yaml up -d --build
+```
+
+# Init testing database
+Passwords are stored as **bcrypt hashes**.
+
+`psql -U postgres -d mydatabase`:
+
+```sql
+CREATE TABLE IF NOT EXISTS "users" (
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+```
+
+Generate a bcrypt hash for your password (e.g. `admin`), then insert it:
+
+```bash
+python3 -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode())"
+```
+
+Copy the output and use it in the INSERT (replace `PASTE_HASH_HERE` with the actual hash):
 
 ### Production
 

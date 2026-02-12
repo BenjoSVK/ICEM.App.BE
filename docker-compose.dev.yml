@@ -21,6 +21,7 @@ services:
     env_file:
       - .env
     environment:
+      DEPLOY: dev
       PYTHONUNBUFFERED: 1
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
@@ -44,6 +45,9 @@ services:
     env_file:
       - .env
     environment:
+      DEPLOY: dev
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
        NVIDIA_VISIBLE_DEVICES: all
        NVIDIA_DRIVER_CAPABILITIES: compute,utility
     volumes:
@@ -71,6 +75,9 @@ services:
     ports:
       - 5432:5432
     environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: mydatabase
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword

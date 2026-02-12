@@ -1,20 +1,23 @@
-from pathlib import Path
-import zipfile
+"""
+Handler for ZIP archives: extracts contents and delegates to other handlers for each file.
+"""
 import logging
+import zipfile
+from pathlib import Path
 from typing import List
+
 from schemas.file_info import FileInfo
 
-from backend.storage import Storage
 from backend.file_handlers import IFileHandler, IFileHandlers
-
+from backend.storage import Storage
 
 logger = logging.getLogger("uvicorn.access")
 
 
 class ZipArchiveHandler(IFileHandler):
-    EXTENSIONS = [
-        ".zip"
-    ]
+    """Accepts .zip files; extracts to a temp folder and processes each entry with the handler chain."""
+
+    EXTENSIONS = [".zip"]
 
     def is_supported(self, file_path: Path) -> bool:
         ext = file_path.suffix.lower()
@@ -61,8 +64,12 @@ class ZipArchiveHandler(IFileHandler):
 
                     # Append the list of results
                     result += inner_result
-                except:
-                    pass
+                except Exception as e:
+                    logger.exception(
+                        "Failed to accept file %s: %s",
+                        inner_file.as_posix(),
+                        e,
+                    )
                 
 
         return result

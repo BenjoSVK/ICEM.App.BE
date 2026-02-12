@@ -26,11 +26,14 @@ from backend.factory import create_inference_backend, BackendFactory
 
 settings = get_settings()
 
+_cors_origins = settings.cors_origins
+_cors_credentials = "*" not in _cors_origins
+
 middleware = [
     Middleware(
         CORSMiddleware,
-        allow_origins=["*"], # Change this to the specific origins in production
-        allow_credentials=True, # And also this
+        allow_origins=_cors_origins,
+        allow_credentials=_cors_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -97,7 +100,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(api_router, prefix="/ikem_api")
 
 
-def main():
+def main() -> None:
     """
     Run the backend app using uvicorn.
     """

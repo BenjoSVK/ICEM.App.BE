@@ -1,7 +1,9 @@
+"""
+API router that mounts auth and data endpoints under /ikem_api.
+"""
 from fastapi import APIRouter
 
-from .endpoints import data_api
-from .endpoints import auth
+from .endpoints import auth, data_api
 
 api_router = APIRouter()
 

@@ -1,14 +1,13 @@
 """
-This module handles database initiation and the creation/destruction of DB connection.
+Database connection and session lifecycle for the API.
 """
-
-from sqlalchemy.engine import Engine
+from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from config import get_settings
-
 
 base = object
 Session_Local = Session
@@ -35,16 +34,12 @@ def create_database_connection() -> None:
 
 
 def get_session() -> Session:
-    """
-    Retrieve the session object
-    """
+    """Return a new database session (caller must close it)."""
     return Session_Local()
 
 
-def get_db():
-    """
-    Create DB connection for API request and close it after request is done
-    """
+def get_db() -> Generator[Session, None, None]:
+    """FastAPI dependency: yield a DB session for the request and close it when done."""
     db = Session_Local()
     try:
         yield db

@@ -1,22 +1,24 @@
-
+"""
+Backend factory: creates InferenceBackend and holds the singleton used by API dependencies.
+"""
 from pathlib import Path
+from typing import Optional
 
-from backend.storage import Storage
-from backend.inference_backend import InferenceBackend
 from backend.file_handlers import FileHandlers
-from backend.handlers.zip_handler import ZipArchiveHandler
 from backend.handlers.image_handler import ImageFileHandler
-
-from inference.inference_engine import InferenceEngine
+from backend.handlers.zip_handler import ZipArchiveHandler
+from backend.inference_backend import InferenceBackend
+from backend.storage import Storage
 from inference.image_loader import OpenCvImageLoader
 from inference.iedl.model import IedlModel
+from inference.inference_engine import InferenceEngine
 
 
 def create_inference_backend(
-    storage_path: Path, 
-    enable_inference: bool
+    storage_path: Path,
+    enable_inference: bool,
 ) -> InferenceBackend:
-    
+    """Build InferenceBackend with storage, file handlers, and optionally an inference engine."""
     # Decide if inference is necessary
     engine = None
     if enable_inference:
@@ -44,24 +46,32 @@ def create_inference_backend(
 
 
 class BackendFactory:
-    _instance = None
+    """Singleton that holds the single InferenceBackend instance for the app."""
 
-    def __new__(cls):
+    _instance: Optional["BackendFactory"] = None
+
+    def __new__(cls) -> "BackendFactory":
         if cls._instance is None:
             cls._instance = super(BackendFactory, cls).__new__(cls)
         return cls._instance
-    
-    def __init__(self):
-        if not hasattr(self, "backend"):
-            self.backend = None
 
-    def initialize(self, backend):
+    def __init__(self) -> None:
+        if not hasattr(self, "backend"):
+            self.backend: Optional[InferenceBackend] = None
+
+    def initialize(self, backend: InferenceBackend) -> None:
+        """Set the backend instance (call once at startup)."""
         self.backend = backend
 
 
-# Single backend instance !
-def get_backend():
-    return BackendFactory().backend
+def get_backend() -> InferenceBackend:
+    """FastAPI dependency: return the initialized InferenceBackend or raise RuntimeError."""
+    backend = BackendFactory().backend
+    if backend is None:
+        raise RuntimeError(
+            "Inference backend is not initialized. Call BackendFactory().initialize(backend) first."
+        )
+    return backend
 
 
 
