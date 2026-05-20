@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 from pathlib import Path
 import cv2
+import warnings
 from shapely.geometry import shape
 from tqdm import tqdm
 
@@ -9,15 +10,6 @@ from iedl_segmentation.utils.tissue_segmentation_export import get_name_and_colo
 
 
 class GeoJsonExporter:
-    def __init__(self):
-
-        # Do we need this ?
-        
-        pass
-
-
-
-
     def write_to_file(
         self, 
         tissue_mask: np.ndarray,
@@ -102,6 +94,14 @@ def _convert_to_geojson(tissue_mask: np.ndarray, output_path: str, vsi_id: str):
     if len(geojson_cells_classes) > 0:
         gdf_classes = gpd.GeoDataFrame.from_features(geojson_cells_classes)
         print(f"Saving GeoJSON file to {output_path}")
-        gdf_classes.to_file(f"{output_path}", driver="GeoJSON")
+        # For WSI pixel-space overlays, CRS is intentionally not set.
+        # Suppress pyogrio/geopandas warning about missing CRS only here.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=".*'crs' was not provided.*",
+                category=UserWarning,
+            )
+            gdf_classes.to_file(f"{output_path}", driver="GeoJSON")
     else:
         print(f"No contours detected. Skipping writing GeoJSON file.")

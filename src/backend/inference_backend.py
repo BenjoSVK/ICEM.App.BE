@@ -14,6 +14,19 @@ from schemas.file_info import FileInfo
 logger = logging.getLogger("uvicorn.access")
 
 
+def _is_hidden_or_system_file(file_path: Path) -> bool:
+    """Ignore metadata/system files accidentally unpacked from archives."""
+    parts = file_path.parts
+    name = file_path.name
+    if "__MACOSX" in parts:
+        return True
+    if name in {".DS_Store", "Thumbs.db"}:
+        return True
+    if name.startswith("._"):
+        return True
+    return False
+
+
 class InferenceBackend:
     """Orchestrates storage, file handlers, and optional inference engine."""
 
@@ -63,7 +76,7 @@ class InferenceBackend:
         files = self.storage.rglob(Storage.TIF_FOLDER, "*")
 
         for file_path in files:
-            if file_path.is_file():
+            if file_path.is_file() and not _is_hidden_or_system_file(file_path):
                 result.append(get_file_info(file_path, tif_path))
 
         return result
@@ -73,6 +86,7 @@ class InferenceBackend:
         self,
         image_file_path: Path,
         model_name: str,
+        model_options: Optional[dict] = None,
     ) -> None:
         """Synchronously execute model inference on the given file."""
         logger.info(f"InferenceBackend.execute_inference - {image_file_path.as_posix()}")
@@ -83,7 +97,8 @@ class InferenceBackend:
         self.engine.process(
             image_file_path=image_file_path,
             model_name=model_name,
-            storage=self.storage
+            storage=self.storage,
+            model_options=model_options,
         )
 
 

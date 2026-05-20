@@ -1,12 +1,24 @@
-venv
-.venv
-__pycache__
-.DS_Store
-src/transfered_data
-iedl_root_dir
-
+# env
 .env
 .env.local
 .env.prod
 .env.*
 !.env.example
+
+# node
+node_modules/
+
+# python
+venv/
+.venv
+__pycache__/
+
+# build
+dist/
+build/
+
+# logs
+*.log
+
+# OS
+.DS_Store

@@ -10,7 +10,7 @@ from backend.handlers.zip_handler import ZipArchiveHandler
 from backend.inference_backend import InferenceBackend
 from backend.storage import Storage
 from inference.image_loader import OpenCvImageLoader
-from inference.iedl.model import IedlModel
+from inference.iedl.model import IedlModel, IedlModelConfiguration
 from inference.inference_engine import InferenceEngine
 
 
@@ -27,6 +27,20 @@ def create_inference_backend(
             models={
                 "iedl": IedlModel(
                     models_path=storage_path / "trained_models"
+                ),
+                "iedl_attention_unet": IedlModel(
+                    models_path=storage_path / "trained_models",
+                    model_configuration=IedlModelConfiguration(
+                        im_channels=3,
+                        mask_channels=4,
+                        down_channels=[64, 128, 256, 512, 1024],
+                        mid_channels=[1024, 512],
+                        down_sample=[True, True, True, True],
+                        res_net_layers=1,
+                        use_soft_attention=True,
+                        cell_model_arch="attention_unet",
+                        cell_model_id="cell-attention-v1",
+                    ),
                 )
             }
         )

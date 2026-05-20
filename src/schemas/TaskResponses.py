@@ -21,6 +21,14 @@ class AsyncTaskResponse(BaseModel):
 class PredictStructureRequest(BaseModel):
     """Request body for predict_structure - list of tiff IDs must not be empty."""
     tiff_ids: list[str] = Field(..., min_length=1, description="Non-empty list of tiff file IDs")
+    model_name: str = Field(
+        default="iedl",
+        description="Inference model key registered in backend (e.g. 'iedl', 'iedl_attention_unet')",
+    )
+    cell_model_id: str | None = Field(
+        default=None,
+        description="Optional cell model id from IEDL registry (e.g. 'cell-resnet-v1').",
+    )
 
 
 class PredictStructureResponse(BaseModel):

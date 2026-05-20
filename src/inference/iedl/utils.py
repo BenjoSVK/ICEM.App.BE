@@ -1,12 +1,16 @@
-
 import os
 import logging
 import cv2
 import numpy as np
 import geopandas as gpd
+import traceback
 
 from datetime import datetime
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
+
+
+from concurrent.futures import ProcessPoolExecutor
+
 
 
 from iedl_segmentation.cell_postprocessing import (
@@ -20,8 +24,7 @@ SHAPE_THRESHOLD = -1
 AREA_THRESHOLD = 60
 COLOR_THRESHOLD = 11
 CIRCULARITY_THRESHOLD = 0.7
-MAX_WORKERS = 1 #os.cpu_count()
-
+MAX_WORKERS = os.cpu_count()
 
 
 
@@ -85,8 +88,12 @@ def performFilters(
     logger.warning(f"cell filter: total_contours={total_contours}, num_batches={num_batches}, batch_size={batch_size}")
     # Use multiprocessing to parallelize batch processing
     if MAX_WORKERS > 1:
-        with Pool(processes=MAX_WORKERS) as pool:
-            results = pool.map(process_batch, args_list)
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS, mp_context=get_context("spawn")) as executor:
+            try:
+                results = list(executor.map(process_batch, args_list))
+            except Exception as e:
+                logger.error(f"Pool.map failed: {e}", exc_info=True)
+                raise
     else:
         results = []
         for idx, x in enumerate(args_list):

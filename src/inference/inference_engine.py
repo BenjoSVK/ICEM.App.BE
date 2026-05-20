@@ -3,9 +3,9 @@ import logging
 import numpy as np
 from pathlib import Path
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
 
 from backend.storage import Storage
-from typing import Dict
 
 
 logger = logging.getLogger("uvicorn.access")
@@ -50,7 +50,8 @@ class InferenceEngine:
         self,
         image_file_path: Path,
         model_name: str,
-        storage: Storage
+        storage: Storage,
+        model_options: Optional[Dict[str, Any]] = None,
         ):
         """Synchronously executed model inference on the given file.
         Once finished, the model should produce result files
@@ -70,6 +71,8 @@ class InferenceEngine:
         
         # Run inference with this model
         model = self.models[model_name]
+        if model_options and hasattr(model, "set_runtime_options"):
+            model.set_runtime_options(model_options)
         model.lazy_initialize()
 
         # Load the file, and go !

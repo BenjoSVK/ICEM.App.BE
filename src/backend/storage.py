@@ -17,7 +17,6 @@ class Storage:
     CELL_MASK_FOLDER = "cell_mask_folder"
     ANNOTATION_FOLDER = "annotation_folder"
 
-
     def __init__(
         self,
         basepath: Path

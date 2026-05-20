@@ -18,13 +18,6 @@ Links for endpoints documentation (server needst to be started first): `http://l
 
 ## Docker
 
-Initial create of network:
-
-```bash
-docker network create vgg_histo_network
-docker volume create db_data
-```
-
 ### Development
 Uses `.env`. From repo root:
 
@@ -50,29 +43,10 @@ Rebuild:
 docker compose -f docker-compose.prod.yaml up -d --build
 ```
 
-# Init testing database
-Passwords are stored as **bcrypt hashes**.
+# Init database
 
-`psql -U postgres -d mydatabase`:
+`docker exec -it vgg_histo_db psql -U postgres -d mydatabase`
 
-```sql
-CREATE TABLE IF NOT EXISTS "users" (
-    username VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL
-);
-```
-
-Generate a bcrypt hash for your password (e.g. `admin`), then insert it:
-
-```bash
-python3 -c "import bcrypt; print(bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode())"
-```
-
-Copy the output and use it in the INSERT (replace `PASTE_HASH_HERE` with the actual hash):
-
-### Production
-
-# Init testing database
 Passwords are stored as **bcrypt hashes**.
 
 `psql -U postgres -d mydatabase`:

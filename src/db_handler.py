@@ -8,6 +8,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from config import get_settings
+from services.file_registry import ensure_registry_tables
 
 base = object
 Session_Local = Session
@@ -31,6 +32,11 @@ def create_database_connection() -> None:
     )
 
     Session_Local = sessionmaker(autocommit=False, autoflush=False, bind=deimos_db)
+    db = Session_Local()
+    try:
+        ensure_registry_tables(db)
+    finally:
+        db.close()
 
 
 def get_session() -> Session:
